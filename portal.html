@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firm Portal | Mike Ross & Attorneys</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%23facc15'><path stroke-linecap='round' stroke-linejoin='round' d='M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265-4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-6.866-1.918 5.988 5.988 0 01-6.866 1.918c-.483-.174-.711-.703-.59-1.202L5.25 4.97m13.5 0l-2.62 10.726m0 0l-2.62-10.726' /></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -81,6 +82,11 @@
             font-size: 0.75rem;
             padding: 2px 6px;
         }
+
+        textarea {
+            resize: none;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
@@ -106,6 +112,7 @@
             <nav id="main-nav" class="flex flex-col space-y-2">
                 <a href="#dashboard" class="nav-link bg-gray-700 text-white flex items-center px-4 py-3 rounded-lg">Dashboard</a>
                 <a href="#cases" class="nav-link text-gray-400 hover:bg-gray-700 hover:text-white flex items-center px-4 py-3 rounded-lg">Case Management</a>
+                <a href="#archive" class="nav-link text-gray-400 hover:bg-gray-700 hover:text-white flex items-center px-4 py-3 rounded-lg">Case Archive</a>
                 <a href="#financials" class="nav-link text-gray-400 hover:bg-gray-700 hover:text-white flex items-center px-4 py-3 rounded-lg">Financials</a>
                 <a href="#calendar" class="nav-link text-gray-400 hover:bg-gray-700 hover:text-white flex items-center px-4 py-3 rounded-lg">Calendar</a>
             </nav>
@@ -163,6 +170,20 @@
                     <p>No cases found matching your criteria.</p>
                 </div>
             </div>
+
+            <!-- Case Archive View -->
+            <div id="archive" class="page-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-white">Case Archive</h1>
+                </div>
+                <div id="archive-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Archived case cards will be dynamically injected here -->
+                </div>
+                <div id="no-archived-cases-message" class="hidden text-center p-10 text-gray-500">
+                    <p>No cases have been archived.</p>
+                </div>
+            </div>
+
             <!-- Financials View -->
             <div id="financials" class="page-content hidden">
                 <div class="flex justify-between items-center mb-6">
@@ -520,7 +541,7 @@
 
     <!-- Case Detail View -->
     <div id="case-file-backdrop" class="case-file-backdrop fixed inset-0 bg-gray-900 bg-opacity-80 z-40 hidden" style="opacity: 0;">
-        <div id="case-file-content" class="case-file-content absolute top-0 right-0 h-full w-full max-w-4xl bg-gray-800 shadow-2xl border-l-2 border-yellow-400 p-8 overflow-y-auto" style="transform: translateX(100%); opacity:0;">
+        <div id="case-file-content" class="case-file-content absolute top-0 right-0 h-full w-full max-w-7xl bg-gray-800 shadow-2xl border-l-2 border-yellow-400 p-8 overflow-y-auto" style="transform: translateX(100%); opacity:0;">
             <!-- Case File Content will be loaded here -->
         </div>
     </div>
@@ -576,13 +597,12 @@
         const userRoleSpan = document.getElementById('user-role');
         const adminRedirectContainer = document.getElementById('admin-redirect-container');
         const transactionsTableBody = document.getElementById('transactions-table-body');
-        const casesGrid = document.getElementById('cases-grid');
         const caseFileBackdrop = document.getElementById('case-file-backdrop');
         const caseFileContent = document.getElementById('case-file-content');
         let currentCaseId = null;
         let currentUserRole = 'Staff'; // Default role
 
-        // --- Helper Function to Send Discord Webhook ---
+        // --- Helper Functions ---
         async function sendToDiscord(webhookUrl, embed) {
             if (!webhookUrl || webhookUrl.includes("your_webhook_url")) {
                 console.warn("Discord webhook URL is a placeholder. Skipping notification.");
@@ -602,6 +622,11 @@
                 console.error('Error sending to Discord:', error);
             }
         }
+
+        const autoResizeTextarea = (textarea) => {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        };
 
         // Function to check user role and update UI
         const checkUserRole = async (uid) => {
@@ -791,40 +816,20 @@
         };
 
         const listenForCases = () => {
-            const noCasesMessage = document.getElementById('no-cases-message');
-            const searchInput = document.getElementById('case-search-input');
-            const filterButtons = document.querySelectorAll('.case-filter-btn');
-            let allCases = [];
+            let activeCases = [];
             let currentFilter = 'All';
 
-            const renderCases = () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const filteredCases = allCases.filter(caseData => {
-                    const matchesFilter = currentFilter === 'All' || caseData.status === currentFilter;
-                    const matchesSearch = !searchTerm ||
-                        caseData.clientName.toLowerCase().includes(searchTerm) ||
-                        caseData.id.toLowerCase().includes(searchTerm) ||
-                        caseData.assignedTo.toLowerCase().includes(searchTerm);
-                    return matchesFilter && matchesSearch;
-                });
-                casesGrid.innerHTML = '';
-                if (filteredCases.length === 0) {
-                    noCasesMessage.classList.remove('hidden');
-                    casesGrid.classList.add('hidden');
-                } else {
-                    noCasesMessage.classList.add('hidden');
-                    casesGrid.classList.remove('hidden');
-                }
-                filteredCases.forEach(caseData => {
-                    const statusColors = {
-                        'Active': 'bg-blue-600 text-blue-100', 'Pending': 'bg-yellow-600 text-yellow-100',
-                        'Closed': 'bg-gray-600 text-gray-100', 'Archived': 'bg-purple-600 text-purple-100'
-                    };
-                    const statusColor = statusColors[caseData.status] || 'bg-gray-600';
-                    const card = document.createElement('div');
-                    card.className = "case-card bg-gray-800 rounded-lg border border-gray-700 p-5 flex flex-col hover:border-yellow-400 transition-all duration-200 cursor-pointer";
-                    card.dataset.caseId = caseData.id;
-                    card.innerHTML = `
+            const searchInput = document.getElementById('case-search-input');
+            const filterButtons = document.querySelectorAll('.case-filter-btn');
+
+            const renderCaseCard = (caseData) => {
+                const statusColors = {
+                    'Active': 'bg-blue-600 text-blue-100', 'Pending': 'bg-yellow-600 text-yellow-100',
+                    'Closed': 'bg-gray-600 text-gray-100', 'Archived': 'bg-purple-600 text-purple-100'
+                };
+                const statusColor = statusColors[caseData.status] || 'bg-gray-600';
+                return `
+                        <div class="case-card bg-gray-800 rounded-lg border border-gray-700 p-5 flex flex-col hover:border-yellow-400 transition-all duration-200 cursor-pointer" data-case-id="${caseData.id}">
                             <div class="flex justify-between items-start">
                                 <h3 class="text-lg font-bold text-white mb-2">${caseData.clientName}</h3>
                                 <span class="px-2 py-1 text-xs font-semibold ${statusColor} rounded-full">${caseData.status}</span>
@@ -842,35 +847,79 @@
                                     <span class="font-medium text-white">${new Date(caseData.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
-                        `;
-                    casesGrid.appendChild(card);
-                });
+                        </div>
+                    `;
             };
 
-            searchInput.addEventListener('input', renderCases);
+            const renderActiveCases = () => {
+                const casesGrid = document.getElementById('cases-grid');
+                const noCasesMessage = document.getElementById('no-cases-message');
+                const searchTerm = searchInput.value.toLowerCase();
+
+                const filteredCases = activeCases.filter(caseData => {
+                    const matchesFilter = currentFilter === 'All' || caseData.status === currentFilter;
+                    const matchesSearch = !searchTerm ||
+                        caseData.clientName.toLowerCase().includes(searchTerm) ||
+                        caseData.id.toLowerCase().includes(searchTerm) ||
+                        caseData.assignedTo.toLowerCase().includes(searchTerm);
+                    return matchesFilter && matchesSearch;
+                });
+
+                casesGrid.innerHTML = '';
+                if (filteredCases.length === 0) {
+                    noCasesMessage.classList.remove('hidden');
+                    casesGrid.classList.add('hidden');
+                } else {
+                    noCasesMessage.classList.add('hidden');
+                    casesGrid.classList.remove('hidden');
+                    filteredCases.forEach(caseData => {
+                        casesGrid.innerHTML += renderCaseCard(caseData);
+                    });
+                }
+            };
+
+            const renderArchivedCases = (archivedCases) => {
+                const archiveGrid = document.getElementById('archive-grid');
+                const noArchivedCasesMessage = document.getElementById('no-archived-cases-message');
+                archiveGrid.innerHTML = '';
+                if (archivedCases.length === 0) {
+                    noArchivedCasesMessage.classList.remove('hidden');
+                    archiveGrid.classList.add('hidden');
+                } else {
+                    noArchivedCasesMessage.classList.add('hidden');
+                    archiveGrid.classList.remove('hidden');
+                    archivedCases.forEach(caseData => {
+                        archiveGrid.innerHTML += renderCaseCard(caseData);
+                    });
+                }
+            };
+
+            searchInput.addEventListener('input', renderActiveCases);
             filterButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     filterButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentFilter = btn.dataset.status;
-                    renderCases();
+                    renderActiveCases();
                 });
             });
-            // Robustly set initial active filter button
             const initialActiveButton = document.querySelector('.case-filter-btn[data-status="All"]');
-            if (initialActiveButton) {
-                initialActiveButton.classList.add('active');
-            }
+            if (initialActiveButton) initialActiveButton.classList.add('active');
 
             const q = query(collection(db, "cases"));
             casesUnsubscribe = onSnapshot(q, (snapshot) => {
-                allCases = [];
+                let allCases = [];
                 snapshot.forEach(doc => allCases.push({ id: doc.id, ...doc.data() }));
                 allCases.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                renderCases();
+
+                activeCases = allCases.filter(c => c.status !== 'Archived');
+                const archivedCases = allCases.filter(c => c.status === 'Archived');
+
+                renderActiveCases();
+                renderArchivedCases(archivedCases);
             }, (error) => {
                 console.error("Error listening for case updates:", error);
-                casesGrid.innerHTML = `<p class="text-red-400 col-span-full text-center">Error loading cases.</p>`;
+                document.getElementById('cases-grid').innerHTML = `<p class="text-red-400 col-span-full text-center">Error loading cases.</p>`;
             });
         };
 
@@ -906,7 +955,7 @@
                 // Add events for this day
                 const eventsForDay = allEvents.filter(event => {
                     const eventDate = new Date(event.date);
-                    return eventDate.getDate() === i && eventDate.getMonth() === month && eventDate.getFullYear() === year;
+                    return eventDate.getUTCDate() === i && eventDate.getUTCMonth() === month && eventDate.getUTCFullYear() === year;
                 });
 
                 const eventsContainer = dayDiv.querySelector('.events-container');
@@ -1202,60 +1251,77 @@
             const caseSnap = await getDoc(doc(db, "cases", caseId));
             if (!caseSnap.exists()) { alert("Case not found!"); return; }
             const caseData = caseSnap.data();
+            const isArchived = caseData.status === 'Archived';
+            const readOnlyAttrs = isArchived ? 'disabled' : '';
 
             const caseFileHTML = `
-                    <div class="flex justify-between items-start">
+                    <div class="flex justify-between items-start mb-8">
                         <div>
-                            <input type="text" id="case-file-client-name" class="text-3xl font-bold text-white bg-transparent border-b-2 border-transparent focus:border-yellow-400 focus:outline-none" value="${caseData.clientName}">
-                            <p class="text-gray-400 font-mono text-sm">Case ID: ${caseId}</p>
+                            <input type="text" id="case-file-client-name" class="text-4xl font-bold text-white bg-transparent border-b-2 border-transparent focus:border-yellow-400 focus:outline-none" value="${caseData.clientName}" ${readOnlyAttrs}>
+                            <p class="text-gray-400 font-mono text-sm mt-1">Case ID: ${caseId}</p>
                         </div>
                         <button id="close-case-file-btn" class="text-3xl font-bold text-gray-400 hover:text-white leading-none p-1">&times;</button>
                     </div>
-                    <div class="mt-6 border-b border-gray-600">
-                        <nav id="case-file-tabs" class="flex space-x-6 -mb-px">
-                            <a href="#overview" class="case-tab py-2 border-b-2 border-yellow-400 text-yellow-400 font-semibold">Overview</a>
-                            <a href="#evidence" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Evidence</a>
-                            <a href="#witnesses" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Witnesses</a>
-                            <a href="#log" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Case Log</a>
-                            <a href="#finances" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Finances</a>
-                        </nav>
-                    </div>
-                    <div id="case-file-tab-content" class="mt-6">
-                        <div id="overview" class="case-tab-content">
-                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <!-- Left Column: Details -->
-                                <div class="lg:col-span-2">
-                                    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
-                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Assigned Attorney</label><input type="text" id="case-file-assigned-attorney" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" value="${caseData.assignedTo}"></div>
-                                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Case Status</label><select id="case-status-select" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5"><option value="Active" ${caseData.status === 'Active' ? 'selected' : ''}>Active</option><option value="Pending" ${caseData.status === 'Pending' ? 'selected' : ''}>Pending</option><option value="Closed" ${caseData.status === 'Closed' ? 'selected' : ''}>Closed</option><option value="Archived" ${caseData.status === 'Archived' ? 'selected' : ''}>Archived</option></select></div>
-                                        </div>
-                                        <div class="mt-6"><label class="block text-sm font-medium text-gray-400 mb-1">Case Summary</label><textarea id="case-file-summary" rows="6" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5">${caseData.summary}</textarea></div>
-                                        <div class="mt-6 flex justify-end"><button id="update-case-btn" class="bg-yellow-400 text-gray-900 font-bold py-2 px-5 rounded-lg hover:bg-yellow-300">Save Changes</button></div>
-                                    </div>
-                                    <div id="admin-actions-container" class="hidden mt-6 bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-                                        <h3 class="text-lg font-semibold text-red-400 mb-4">Admin Actions</h3>
-                                        <div class="flex flex-wrap gap-4">
-                                            <button id="archive-case-btn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-500 text-sm">Archive Case</button>
-                                            <button id="delete-case-btn" class="bg-transparent border border-red-500 text-red-400 font-bold py-2 px-4 rounded-lg hover:bg-red-500/20 text-sm">Delete Case Permanently</button>
-                                        </div>
-                                    </div>
+
+                    <div class="space-y-8">
+                        <!-- Section 1: Core Case Details -->
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                            <h3 class="text-2xl font-bold text-white mb-4 border-b border-gray-600 pb-2">Case Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div><label class="block text-sm font-medium text-gray-400 mb-1">Assigned Attorney</label><input type="text" id="case-file-assigned-attorney" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" value="${caseData.assignedTo}" ${readOnlyAttrs}></div>
+                                <div><label class="block text-sm font-medium text-gray-400 mb-1">Base Price</label><input type="number" id="case-base-price-display" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" value="${caseData.basePrice || 0}" ${readOnlyAttrs}></div>
+                                <div><label class="block text-sm font-medium text-gray-400 mb-1">Case Status</label><select id="case-status-select" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" ${readOnlyAttrs}><option value="Active" ${caseData.status === 'Active' ? 'selected' : ''}>Active</option><option value="Pending" ${caseData.status === 'Pending' ? 'selected' : ''}>Pending</option><option value="Closed" ${caseData.status === 'Closed' ? 'selected' : ''}>Closed</option><option value="Archived" ${caseData.status === 'Archived' ? 'selected' : ''}>Archived</option></select></div>
+                            </div>
+                            <div class="mt-6"><label class="block text-sm font-medium text-gray-400 mb-1">Case Summary / Notes</label><textarea id="case-file-summary" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" ${readOnlyAttrs}>${caseData.summary}</textarea></div>
+                            ${!isArchived ? `<div class="mt-6 flex justify-end"><button id="update-case-btn" class="bg-yellow-400 text-gray-900 font-bold py-2 px-5 rounded-lg hover:bg-yellow-300">Save Changes</button></div>` : ''}
+                        </div>
+
+                        <!-- Section 2: Evidence & Witnesses (Two-column grid) -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div>
+                                <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
+                                    <h3 class="text-2xl font-bold text-white">Evidence Locker</h3>
+                                    ${!isArchived ? `<button id="add-evidence-btn" class="bg-blue-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-blue-400">Log New Evidence</button>` : ''}
                                 </div>
-                                <!-- Right Column: At a Glance -->
-                                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
-                                    <h3 class="text-xl font-semibold text-white mb-4">At a Glance</h3>
-                                    <div class="space-y-4">
-                                        <div id="overview-finance-summary"></div>
-                                        <div><h4 class="text-sm font-semibold text-gray-400 mb-2">Key Info</h4><div class="bg-gray-700/50 p-3 rounded-md space-y-2"><div id="overview-evidence-count"></div><div id="overview-witness-count"></div></div></div>
-                                        <div><h4 class="text-sm font-semibold text-gray-400 mb-2">Recent Activity (Last 5)</h4><div id="overview-log-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div></div>
-                                    </div>
+                                <div id="evidence-list" class="space-y-4"></div>
+                            </div>
+                            <div>
+                                 <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
+                                    <h3 class="text-2xl font-bold text-white">Witnesses</h3>
+                                    ${!isArchived ? `<button id="add-witness-btn" class="bg-blue-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-blue-400">Add Witness</button>` : ''}
                                 </div>
+                                <div id="witness-list" class="space-y-4"></div>
                             </div>
                         </div>
-                        <div id="evidence" class="case-tab-content hidden"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-white">Evidence Locker</h3><button id="add-evidence-btn" class="bg-blue-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-blue-400">Log New Evidence</button></div><div id="evidence-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
-                        <div id="witnesses" class="case-tab-content hidden"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-white">Witness List</h3><button id="add-witness-btn" class="bg-blue-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-blue-400">Add Witness</button></div><div id="witness-list" class="space-y-3"></div></div>
-                        <div id="log" class="case-tab-content hidden"><h3 class="text-xl font-semibold text-white mb-4">Case Activity Log</h3><form id="add-log-form" class="flex space-x-2 mb-4"><input type="text" id="log-entry-input" placeholder="Log a new activity..." class="flex-grow bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" required><button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg">Add Log</button></form><div id="log-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"></div></div>
-                        <div id="finances" class="case-tab-content hidden"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-white">Case Financial Ledger</h3><button id="add-charge-btn" class="bg-red-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-red-400">Add Charge</button></div><div id="case-finance-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div><div id="case-finance-list" class="space-y-3"></div></div>
+
+                        <!-- Section 3: Finances -->
+                        <div>
+                             <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
+                                <h3 class="text-2xl font-bold text-white">Case Finances</h3>
+                                ${!isArchived ? `<button id="add-charge-btn" class="bg-red-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-red-400">Add Charge</button>` : ''}
+                            </div>
+                            <div id="case-finance-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 my-4"></div>
+                            <div id="case-finance-list" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Section 4: Activity Log -->
+                        <div>
+                            <h3 class="text-2xl font-bold text-white mb-4 border-b border-gray-600 pb-2">Case Activity Log</h3>
+                            ${!isArchived ? `<form id="add-log-form" class="flex space-x-2 mb-4"><input type="text" id="log-entry-input" placeholder="Log a new activity..." class="flex-grow bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" required><button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg">Add Log</button></form>` : ''}
+                            <div id="log-list" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Section 5: Admin Actions -->
+                        <div id="admin-actions-container" class="hidden mt-6 bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-red-400 mb-4">Admin Actions</h3>
+                            <div class="flex flex-wrap gap-4">
+                                ${isArchived ?
+                    `<button id="unarchive-case-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-500 text-sm">Un-archive Case</button>` :
+                    `<button id="archive-case-btn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-500 text-sm">Archive Case</button>`
+                }
+                                <button id="delete-case-btn" class="bg-transparent border border-red-500 text-red-400 font-bold py-2 px-4 rounded-lg hover:bg-red-500/20 text-sm">Delete Case Permanently</button>
+                            </div>
+                        </div>
                     </div>`;
             caseFileContent.innerHTML = caseFileHTML;
 
@@ -1289,50 +1355,54 @@
         const setupCaseFileListeners = (caseId, originalCaseData) => {
             document.getElementById('close-case-file-btn').addEventListener('click', closeCaseFile);
 
-            // Tab switching logic
-            const tabs = document.querySelectorAll('.case-tab');
-            const tabContents = document.querySelectorAll('.case-tab-content');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', e => {
-                    e.preventDefault();
-                    tabs.forEach(t => { t.classList.remove('border-yellow-400', 'text-yellow-400', 'font-semibold'); t.classList.add('border-transparent', 'text-gray-400'); });
-                    tab.classList.add('border-yellow-400', 'text-yellow-400', 'font-semibold');
-                    tab.classList.remove('border-transparent', 'text-gray-400');
-                    const targetId = tab.getAttribute('href').substring(1);
-                    tabContents.forEach(content => content.classList.add('hidden'));
-                    document.getElementById(targetId).classList.remove('hidden');
-                });
-            });
+            const summaryTextarea = document.getElementById('case-file-summary');
+            if (summaryTextarea) {
+                summaryTextarea.addEventListener('input', () => autoResizeTextarea(summaryTextarea));
+                autoResizeTextarea(summaryTextarea); // Initial resize
+            }
 
-            // Update Case Details Listener
-            document.getElementById('update-case-btn').addEventListener('click', async () => {
-                const caseRef = doc(db, "cases", caseId);
-                const updatedData = {
-                    clientName: document.getElementById('case-file-client-name').value,
-                    assignedTo: document.getElementById('case-file-assigned-attorney').value,
-                    summary: document.getElementById('case-file-summary').value,
-                    status: document.getElementById('case-status-select').value,
-                };
-                try {
-                    await updateDoc(caseRef, updatedData);
-                    if (originalCaseData.status !== updatedData.status) {
-                        const statusUpdateEmbed = { title: `Case Status Update: #${caseId.substring(0, 8)}`, color: 8421504, fields: [{ name: "Client", value: updatedData.clientName, inline: true }, { name: "Previous Status", value: originalCaseData.status, inline: false }, { name: "New Status", value: updatedData.status, inline: false }], timestamp: new Date().toISOString() };
-                        sendToDiscord(webhookURLs.cases, statusUpdateEmbed);
-                    }
-                    const saveBtn = document.getElementById('update-case-btn');
-                    saveBtn.textContent = 'Saved!';
-                    saveBtn.classList.add('bg-green-500');
-                    setTimeout(() => { saveBtn.textContent = 'Save Changes'; saveBtn.classList.remove('bg-green-500'); }, 2000);
-                } catch (error) { console.error("Error updating case:", error); alert("Failed to update case details."); }
-            });
+            const updateCaseBtn = document.getElementById('update-case-btn');
+            if (updateCaseBtn) {
+                updateCaseBtn.addEventListener('click', async () => {
+                    const caseRef = doc(db, "cases", caseId);
+                    const updatedData = {
+                        clientName: document.getElementById('case-file-client-name').value,
+                        assignedTo: document.getElementById('case-file-assigned-attorney').value,
+                        summary: document.getElementById('case-file-summary').value,
+                        status: document.getElementById('case-status-select').value,
+                        basePrice: parseFloat(document.getElementById('case-base-price-display').value)
+                    };
+                    try {
+                        await updateDoc(caseRef, updatedData);
+                        if (originalCaseData.status !== updatedData.status) {
+                            const statusUpdateEmbed = { title: `Case Status Update: #${caseId.substring(0, 8)}`, color: 8421504, fields: [{ name: "Client", value: updatedData.clientName, inline: true }, { name: "Previous Status", value: originalCaseData.status, inline: false }, { name: "New Status", value: updatedData.status, inline: false }], timestamp: new Date().toISOString() };
+                            sendToDiscord(webhookURLs.cases, statusUpdateEmbed);
+                        }
+                        const saveBtn = document.getElementById('update-case-btn');
+                        saveBtn.textContent = 'Saved!';
+                        saveBtn.classList.add('bg-green-500');
+                        setTimeout(() => { saveBtn.textContent = 'Save Changes'; saveBtn.classList.remove('bg-green-500'); }, 2000);
+                    } catch (error) { console.error("Error updating case:", error); alert("Failed to update case details."); }
+                });
+            }
 
             // --- Admin Actions ---
             const archiveBtn = document.getElementById('archive-case-btn');
             if (archiveBtn) {
                 archiveBtn.addEventListener('click', async () => {
-                    const confirmed = await showConfirmation('Archive Case?', 'Are you sure you want to archive this case? It can be recovered later by changing its status.');
+                    const confirmed = await showConfirmation('Archive Case?', 'This will move the case to the archive section and make it read-only.');
                     if (confirmed) {
                         await updateDoc(doc(db, "cases", currentCaseId), { status: 'Archived' });
+                        closeCaseFile();
+                    }
+                });
+            }
+            const unarchiveBtn = document.getElementById('unarchive-case-btn');
+            if (unarchiveBtn) {
+                unarchiveBtn.addEventListener('click', async () => {
+                    const confirmed = await showConfirmation('Un-archive Case?', 'This will move the case back to Active status in Case Management.');
+                    if (confirmed) {
+                        await updateDoc(doc(db, "cases", currentCaseId), { status: 'Active' });
                         closeCaseFile();
                     }
                 });
@@ -1350,9 +1420,6 @@
 
             // --- Evidence, Witness, and Log Listeners & Handlers ---
             const loggedInUser = auth.currentUser ? auth.currentUser.email : 'Unknown';
-            const overviewLogList = document.getElementById('overview-log-list');
-            const overviewEvidenceCount = document.getElementById('overview-evidence-count');
-            const overviewWitnessCount = document.getElementById('overview-witness-count');
 
             // Icon helper
             const getIconForType = (type) => {
@@ -1362,11 +1429,8 @@
 
 
             // Evidence
-            document.getElementById('add-evidence-btn').addEventListener('click', openEvidenceModal);
-            document.getElementById('evidence-file').addEventListener('change', (e) => {
-                const fileNameDisplay = document.getElementById('evidence-file-name');
-                fileNameDisplay.textContent = e.target.files.length > 0 ? `Selected: ${e.target.files[0].name}` : '';
-            });
+            const addEvidenceBtn = document.getElementById('add-evidence-btn');
+            if (addEvidenceBtn) addEvidenceBtn.addEventListener('click', openEvidenceModal);
 
             document.getElementById('add-evidence-form').addEventListener('submit', async e => {
                 e.preventDefault();
@@ -1403,10 +1467,8 @@
             const evidenceList = document.getElementById('evidence-list');
             evidenceUnsubscribe = onSnapshot(query(collection(db, 'cases', caseId, 'evidence')), snapshot => {
                 evidenceList.innerHTML = '';
-                const placeholder = `<p class="text-gray-500 col-span-full text-center text-sm">No evidence logged.</p>`;
-                if (snapshot.empty) { evidenceList.innerHTML = placeholder; overviewEvidenceCount.innerHTML = `<p class="text-sm text-gray-300">Evidence Logged: <span class="font-bold text-white">0</span></p>`; return; }
-
-                overviewEvidenceCount.innerHTML = `<p class="text-sm text-gray-300">Evidence Logged: <span class="font-bold text-white">${snapshot.size}</span></p>`;
+                const placeholder = `<p class="text-gray-500 text-center text-sm">No evidence logged.</p>`;
+                if (snapshot.empty) { evidenceList.innerHTML = placeholder; return; }
 
                 snapshot.forEach(doc => {
                     const item = doc.data();
@@ -1423,7 +1485,9 @@
             });
 
             // Witnesses
-            document.getElementById('add-witness-btn').addEventListener('click', openWitnessModal);
+            const addWitnessBtn = document.getElementById('add-witness-btn');
+            if (addWitnessBtn) addWitnessBtn.addEventListener('click', openWitnessModal);
+
             document.getElementById('add-witness-form').addEventListener('submit', async e => {
                 e.preventDefault();
                 if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
@@ -1434,43 +1498,42 @@
             witnessesUnsubscribe = onSnapshot(query(collection(db, 'cases', caseId, 'witnesses')), snapshot => {
                 witnessList.innerHTML = '';
                 const placeholder = `<p class="text-gray-500 text-center text-sm">No witnesses logged.</p>`;
-                if (snapshot.empty) { witnessList.innerHTML = placeholder; overviewWitnessCount.innerHTML = `<p class="text-sm text-gray-300">Witnesses: <span class="font-bold text-white">0</span></p>`; return; }
-
-                overviewWitnessCount.innerHTML = `<p class="text-sm text-gray-300">Witnesses: <span class="font-bold text-white">${snapshot.size}</span></p>`;
+                if (snapshot.empty) { witnessList.innerHTML = placeholder; return; }
 
                 snapshot.forEach(doc => {
                     const item = doc.data();
-                    witnessList.innerHTML += `<div class="bg-gray-700 p-3 rounded-lg"><h4 class="font-semibold text-white">${item.name}</h4><p class="text-sm text-gray-300 whitespace-pre-wrap">${item.statement}</p><p class="text-xs text-gray-500 mt-1">Added by ${item.addedBy} on ${new Date(item.createdAt).toLocaleDateString()}</p></div>`;
+                    witnessList.innerHTML += `<div class="bg-gray-700/50 p-3 rounded-lg border border-gray-600"><h4 class="font-semibold text-white">${item.name}</h4><p class="text-sm text-gray-300 whitespace-pre-wrap mt-2">${item.statement}</p><p class="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-600">Added by ${item.addedBy} on ${new Date(item.createdAt).toLocaleDateString()}</p></div>`;
                 });
             });
 
             // Case Log
-            document.getElementById('add-log-form').addEventListener('submit', async e => {
-                e.preventDefault();
-                if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
-                const input = document.getElementById('log-entry-input');
-                await addDoc(collection(db, 'cases', caseId, 'log'), { entry: input.value, loggedBy: loggedInUser, createdAt: new Date().toISOString() });
-                input.value = '';
-            });
+            const addLogForm = document.getElementById('add-log-form');
+            if (addLogForm) {
+                addLogForm.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
+                    const input = document.getElementById('log-entry-input');
+                    await addDoc(collection(db, 'cases', caseId, 'log'), { entry: input.value, loggedBy: loggedInUser, createdAt: new Date().toISOString() });
+                    input.value = '';
+                });
+            }
             const logList = document.getElementById('log-list');
             logUnsubscribe = onSnapshot(query(collection(db, 'cases', caseId, 'log')), snapshot => {
                 logList.innerHTML = '';
-                overviewLogList.innerHTML = '';
                 const placeholder = `<p class="text-gray-500 text-center text-sm">No log entries.</p>`;
-                if (snapshot.empty) { logList.innerHTML = placeholder; overviewLogList.innerHTML = placeholder; return; }
+                if (snapshot.empty) { logList.innerHTML = placeholder; return; }
                 let logs = [];
                 snapshot.forEach(doc => logs.push(doc.data()));
                 logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 logs.forEach(item => {
                     logList.innerHTML += `<div class="bg-gray-700/50 p-3 rounded-lg"><p class="text-sm text-gray-300">${item.entry}</p><p class="text-xs text-gray-500 mt-1">Logged by ${item.loggedBy} on ${new Date(item.createdAt).toLocaleString()}</p></div>`;
                 });
-                logs.slice(0, 5).forEach(item => {
-                    overviewLogList.innerHTML += `<div class="bg-gray-700/50 p-2 rounded-md"><p class="text-sm truncate">${item.entry}</p><p class="text-xs text-gray-500 text-right">${new Date(item.createdAt).toLocaleDateString()}</p></div>`;
-                });
             });
 
             // --- Case Finances Listener ---
-            document.getElementById('add-charge-btn').addEventListener('click', openChargeModal);
+            const addChargeBtn = document.getElementById('add-charge-btn');
+            if (addChargeBtn) addChargeBtn.addEventListener('click', openChargeModal);
+
             document.getElementById('add-charge-form').addEventListener('submit', async e => {
                 e.preventDefault();
                 if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
@@ -1482,10 +1545,9 @@
             let caseCharges = [];
             const caseFinanceList = document.getElementById('case-finance-list');
             const caseFinanceSummary = document.getElementById('case-finance-summary');
-            const overviewFinanceSummary = document.getElementById('overview-finance-summary');
 
             const renderCaseFinances = () => {
-                const basePrice = originalCaseData.basePrice || 0;
+                const basePrice = parseFloat(document.getElementById('case-base-price-display').value) || 0;
                 let totalPaid = casePayments.reduce((sum, p) => sum + p.amount, 0);
                 let totalCharges = caseCharges.reduce((sum, c) => sum + c.amount, 0);
                 let totalCost = basePrice + totalCharges;
@@ -1498,18 +1560,6 @@
                             <div class="bg-gray-700/50 p-4 rounded-lg text-center"><h4 class="text-sm font-semibold text-gray-400">Balance Due</h4><p class="text-xl font-bold ${balance > 0 ? 'text-red-400' : 'text-gray-300'}">$${balance.toFixed(2)}</p></div>
                         `;
                 caseFinanceSummary.innerHTML = summaryHTML;
-
-                overviewFinanceSummary.innerHTML = `
-                        <div>
-                            <h4 class="text-sm font-semibold text-gray-400 mb-2">Financials</h4>
-                            <div class="bg-gray-700/50 p-3 rounded-md">
-                                 <div class="flex justify-between items-center text-sm">
-                                    <span class="text-gray-300">Balance Due:</span>
-                                    <span class="font-bold ${balance > 0 ? 'text-red-400' : 'text-white'}">$${balance.toFixed(2)}</span>
-                                 </div>
-                            </div>
-                        </div>
-                    `;
 
                 const combined = [
                     ...casePayments.map(p => ({ ...p, isCharge: false })),
@@ -1526,13 +1576,15 @@
                     const color = item.isCharge ? 'text-red-400' : 'text-green-400';
                     const sign = item.isCharge ? '+' : '+';
                     const title = item.isCharge ? item.description : item.type;
-                    caseFinanceList.innerHTML += `<div class="bg-gray-700 p-3 rounded-lg flex justify-between items-center"><p>${title} <span class="text-xs text-gray-400">(${new Date(item.createdAt).toLocaleDateString()})</span></p><span class="${color} font-mono">${sign}$${item.amount.toFixed(2)}</span></div>`;
+                    caseFinanceList.innerHTML += `<div class="bg-gray-700/50 p-3 rounded-lg flex justify-between items-center"><p>${title} <span class="text-xs text-gray-400">(${new Date(item.createdAt).toLocaleDateString()})</span></p><span class="${color} font-mono">${sign}$${item.amount.toFixed(2)}</span></div>`;
                 });
             };
 
             const chargesQuery = query(collection(db, 'cases', caseId, 'charges'));
             caseChargesUnsubscribe = onSnapshot(chargesQuery, snapshot => { caseCharges = []; snapshot.forEach(doc => caseCharges.push(doc.data())); renderCaseFinances(); });
             caseFinanceUnsubscribe = onSnapshot(query(collection(db, "transactions"), where("client", "==", `${caseId.substring(0, 8)}... - ${originalCaseData.clientName}`)), s => { casePayments = []; s.forEach(d => { if (['Retainer', 'Payment'].includes(d.data().type)) casePayments.push(d.data()); }); renderCaseFinances(); });
+
+            document.getElementById('case-base-price-display').addEventListener('input', renderCaseFinances);
         };
 
         async function deleteCaseAndSubcollections(caseId) {
@@ -1553,12 +1605,20 @@
             await deleteDoc(caseRef);
         }
 
-        casesGrid.addEventListener('click', (e) => {
+        document.getElementById('cases-grid').addEventListener('click', (e) => {
             const card = e.target.closest('.case-card');
             if (card && card.dataset.caseId) {
                 openCaseFile(card.dataset.caseId);
             }
         });
+
+        document.getElementById('archive-grid').addEventListener('click', (e) => {
+            const card = e.target.closest('.case-card');
+            if (card && card.dataset.caseId) {
+                openCaseFile(card.dataset.caseId);
+            }
+        });
+
 
         caseFileBackdrop.addEventListener('click', e => {
             if (e.target === caseFileBackdrop) closeCaseFile();
