@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mike Ross & Attorneys | Unyielding Justice in Los Santos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+
+        .hero-bg {
+            background: linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.8)), url('https://placehold.co/1920x1080/000000/FFFFFF?text=Los+Santos+Skyline') no-repeat center center;
+            background-size: cover;
+        }
+
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+            .fade-in-section.is-visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        /* Styles for the login modal */
+        #login-modal.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <!-- Header / Navigation Bar -->
+    <header class="bg-gray-900/80 backdrop-blur-sm fixed w-full top-0 z-50 border-b border-gray-700/50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-xl md:text-2xl font-bold text-white flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mr-3 text-yellow-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-6.866-1.918 5.988 5.988 0 01-6.866 1.918c-.483-.174-.711-.703-.59-1.202L5.25 4.97m13.5 0l-2.62 10.726m0 0l-2.62-10.726" />
+                </svg>
+                Mike Ross & Attorneys
+            </a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#home" class="text-gray-300 hover:text-yellow-400 transition-colors duration-300">Home</a>
+                <a href="#services" class="text-gray-300 hover:text-yellow-400 transition-colors duration-300">Services</a>
+                <a href="#team" class="text-gray-300 hover:text-yellow-400 transition-colors duration-300">Our Team</a>
+                <a href="#contact" class="text-gray-300 hover:text-yellow-400 transition-colors duration-300">Contact</a>
+                <a href="#" id="firm-portal-link" class="text-gray-300 hover:text-yellow-400 transition-colors duration-300">Firm Portal</a>
+                <div id="user-session" class="hidden items-center">
+                    <span id="user-email" class="text-yellow-400 mr-4"></span>
+                    <button id="logout-button" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-500 transition-colors duration-300">Logout</button>
+                </div>
+            </nav>
+            <a href="#contact" class="hidden md:inline-block bg-yellow-500 text-gray-900 font-bold py-2 px-5 rounded-lg hover:bg-yellow-400 transition-colors duration-300 shadow-lg shadow-yellow-500/20">
+                Free Consultation
+            </a>
+            <button id="mobile-menu-button" class="md:hidden text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-2">
+            <a href="#home" class="block py-2 text-gray-300 hover:text-yellow-400">Home</a>
+            <a href="#services" class="block py-2 text-gray-300 hover:text-yellow-400">Services</a>
+            <a href="#team" class="block py-2 text-gray-300 hover:text-yellow-400">Our Team</a>
+            <a href="#contact" class="block py-2 text-gray-300 hover:text-yellow-400">Contact</a>
+            <a href="#" id="firm-portal-link-mobile" class="block py-2 text-gray-300 hover:text-yellow-400">Firm Portal</a>
+            <a href="#contact" class="mt-4 inline-block w-full text-center bg-yellow-500 text-gray-900 font-bold py-2 px-5 rounded-lg hover:bg-yellow-400 transition-colors duration-300">
+                Free Consultation
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <!-- ... existing sections ... -->
+        <!-- Part 1.A.1: Homepage - Hero Section -->
+        <section id="home" class="hero-bg h-screen flex items-center justify-center text-center">
+            <div class="container mx-auto px-6 fade-in-section">
+                <h1 class="text-5xl md:text-7xl font-black text-white uppercase tracking-wider mb-4" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.7);">Unyielding Justice</h1>
+                <p class="text-xl md:text-2xl text-yellow-300 mb-8 font-light max-w-3xl mx-auto" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.7);">Navigating the complex legal landscape of Los Santos with integrity and tenacity.</p>
+                <a href="#contact" class="bg-yellow-500 text-gray-900 font-bold py-4 px-10 rounded-lg text-lg hover:bg-yellow-400 transition-transform transform hover:scale-105 duration-300 shadow-2xl shadow-yellow-500/30">
+                    Request a Free Consultation
+                </a>
+            </div>
+        </section>
+
+        <!-- Part 1.A.1: Homepage - Services Overview -->
+        <section id="services" class="py-20 bg-gray-800">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12 fade-in-section">
+                    <h2 class="text-4xl font-bold text-white">Our Areas of Expertise</h2>
+                    <p class="text-gray-400 mt-2">Comprehensive legal solutions tailored to your needs.</p>
+                    <div class="mt-4 w-24 h-1 bg-yellow-500 mx-auto rounded"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Service 1: Criminal Defense -->
+                    <div class="bg-gray-900 p-8 rounded-xl text-center border border-gray-700 hover:border-yellow-500 hover:-translate-y-2 transition-all duration-300 fade-in-section">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-yellow-500/10 text-yellow-400 mx-auto mb-6">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-white mb-3">Criminal Defense</h3>
+                        <p class="text-gray-400">From minor infractions to major felonies, we provide a vigorous defense to protect your rights and freedom.</p>
+                    </div>
+                    <!-- Service 2: Civil Litigation -->
+                    <div class="bg-gray-900 p-8 rounded-xl text-center border border-gray-700 hover:border-yellow-500 hover:-translate-y-2 transition-all duration-300 fade-in-section" style="transition-delay: 150ms;">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-yellow-500/10 text-yellow-400 mx-auto mb-6">
+                            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-5H8l4-6v5h3l-4 6z" /></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-white mb-3">Civil Litigation</h3>
+                        <p class="text-gray-400">Resolving disputes between individuals or businesses, including personal injury, contract breaches, and property damage.</p>
+                    </div>
+                    <!-- Service 3: Business Law -->
+                    <div class="bg-gray-900 p-8 rounded-xl text-center border border-gray-700 hover:border-yellow-500 hover:-translate-y-2 transition-all duration-300 fade-in-section" style="transition-delay: 300ms;">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-yellow-500/10 text-yellow-400 mx-auto mb-6">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-white mb-3">Business Law</h3>
+                        <p class="text-gray-400">Expert guidance for corporations on formation, contracts, compliance, and securing business interests.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Part 1.A.1: Homepage - "Meet Our Team" Snippet -->
+        <section id="team" class="py-20 bg-gray-900">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12 fade-in-section">
+                    <h2 class="text-4xl font-bold text-white">Meet Our Legal Experts</h2>
+                    <p class="text-gray-400 mt-2">The sharpest minds in Los Santos, dedicated to your case.</p>
+                    <div class="mt-4 w-24 h-1 bg-yellow-500 mx-auto rounded"></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Team Member 1 -->
+                    <div class="text-center fade-in-section">
+                        <img src="https://placehold.co/400x400/1F2937/FFFFFF?text=Avatar" alt="Team Member 1" class="w-40 h-40 rounded-full mx-auto mb-4 object-cover border-4 border-gray-700 hover:border-yellow-400 transition-colors duration-300">
+                        <h4 class="text-xl font-semibold text-white">Mike Ross</h4>
+                        <p class="text-yellow-400">Founder & Lead Counsel</p>
+                    </div>
+                    <!-- Team Member 2 -->
+                    <div class="text-center fade-in-section" style="transition-delay: 150ms;">
+                        <img src="https://placehold.co/400x400/1F2937/FFFFFF?text=Avatar" alt="Team Member 2" class="w-40 h-40 rounded-full mx-auto mb-4 object-cover border-4 border-gray-700 hover:border-yellow-400 transition-colors duration-300">
+                        <h4 class="text-xl font-semibold text-white">Harvey Specter</h4>
+                        <p class="text-yellow-400">Head of Litigation</p>
+                    </div>
+                    <!-- Team Member 3 -->
+                    <div class="text-center fade-in-section" style="transition-delay: 300ms;">
+                        <img src="https://placehold.co/400x400/1F2937/FFFFFF?text=Avatar" alt="Team Member 3" class="w-40 h-40 rounded-full mx-auto mb-4 object-cover border-4 border-gray-700 hover:border-yellow-400 transition-colors duration-300">
+                        <h4 class="text-xl font-semibold text-white">Louis Litt</h4>
+                        <p class="text-yellow-400">Criminal Defense Specialist</p>
+                    </div>
+                    <!-- Team Member 4 -->
+                    <div class="text-center fade-in-section" style="transition-delay: 450ms;">
+                        <img src="https://placehold.co/400x400/1F2937/FFFFFF?text=Avatar" alt="Team Member 4" class="w-40 h-40 rounded-full mx-auto mb-4 object-cover border-4 border-gray-700 hover:border-yellow-400 transition-colors duration-300">
+                        <h4 class="text-xl font-semibold text-white">Rachel Zane</h4>
+                        <p class="text-yellow-400">Corporate Law Advisor</p>
+                    </div>
+                </div>
+                <div class="text-center mt-12 fade-in-section">
+                    <a href="#" class="text-yellow-400 hover:text-yellow-300 font-semibold text-lg">
+                        View The Full Team &rarr;
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action Section -->
+        <section id="contact" class="py-20 bg-gray-800">
+            <div class="container mx-auto px-6 text-center fade-in-section">
+                <h2 class="text-4xl font-bold text-white">Ready to Discuss Your Case?</h2>
+                <p class="text-gray-400 mt-2 mb-8 max-w-2xl mx-auto">Your first consultation is always free and confidential. Let's discuss how we can help you achieve the best possible outcome.</p>
+                <form id="consultation-form" class="max-w-xl mx-auto">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <input type="text" id="consult-name" placeholder="Your Name" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" required>
+                        <input type="email" id="consult-email" placeholder="Your Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" required>
+                    </div>
+                    <textarea id="consult-details" placeholder="Briefly describe your case..." rows="4" class="w-full bg-gray-700 text-white p-3 rounded-lg mb-4 border border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" required></textarea>
+                    <button type="submit" class="bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg hover:bg-yellow-400 transition-transform transform hover:scale-105 duration-300 shadow-lg shadow-yellow-500/30 w-full">
+                        Send Request
+                    </button>
+                </form>
+                <div id="form-message" class="mt-4 h-6"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-400">
+            <p>&copy; 2025 Mike Ross & Attorneys. All Rights Reserved.</p>
+            <p class="text-sm mt-2">This is a fictional law firm for the FiveM role-playing community.</p>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700 relative">
+            <button id="close-modal-button" class="absolute top-4 right-4 text-gray-400 hover:text-white">&times;</button>
+            <h2 class="text-2xl font-bold text-white text-center mb-6">Firm Portal Login</h2>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="login-email" class="block text-gray-400 mb-2">Email</label>
+                    <input type="email" id="login-email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" required>
+                </div>
+                <div class="mb-6">
+                    <label for="login-password" class="block text-gray-400 mb-2">Password</label>
+                    <input type="password" id="login-password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none" required>
+                </div>
+                <button type="submit" class="w-full bg-yellow-500 text-gray-900 font-bold py-3 rounded-lg hover:bg-yellow-400 transition-colors duration-300">Login</button>
+            </form>
+            <p id="login-error" class="text-red-500 text-center mt-4 h-5"></p>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDzac6Aex6lLCzpz0yedIIYcUX0wuTZwU",
+            authDomain: "mike-ross-attorneys.firebaseapp.com",
+            projectId: "mike-ross-attorneys",
+            storageBucket: "mike-ross-attorneys.appspot.com",
+            messagingSenderId: "812906116208",
+            appId: "1:812906116208:web:71e217e944a6f937d9435b"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- AUTHENTICATION LOGIC ---
+
+        const loginModal = document.getElementById('login-modal');
+        const firmPortalLink = document.getElementById('firm-portal-link');
+        const firmPortalLinkMobile = document.getElementById('firm-portal-link-mobile');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const userSession = document.getElementById('user-session');
+        const userEmailSpan = document.getElementById('user-email');
+        const logoutButton = document.getElementById('logout-button');
+
+        const showLoginModal = () => loginModal.classList.remove('hidden');
+        const hideLoginModal = () => loginModal.classList.add('hidden');
+
+        firmPortalLink.addEventListener('click', (e) => { e.preventDefault(); showLoginModal(); });
+        firmPortalLinkMobile.addEventListener('click', (e) => { e.preventDefault(); showLoginModal(); });
+        closeModalButton.addEventListener('click', hideLoginModal);
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                hideLoginModal();
+            }
+        });
+
+        // Handle Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginError.textContent = '';
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // On successful login, redirect to the portal
+                window.location.href = 'portal.html';
+            } catch (error) {
+                console.error("Login failed:", error.message);
+                loginError.textContent = "Invalid email or password.";
+            }
+        });
+
+        // Handle Logout
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Logout failed:", error);
+            }
+        });
+
+        // Listen for auth state changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in, but this is the public page.
+                // We'll just show their session info in the nav.
+                // The portal page will handle the main logged-in view.
+                console.log("User logged in:", user.email);
+                userSession.classList.remove('hidden');
+                userSession.classList.add('flex');
+                userEmailSpan.textContent = user.email;
+                firmPortalLink.classList.add('hidden');
+                firmPortalLinkMobile.classList.add('hidden');
+            } else {
+                // User is signed out
+                console.log("User logged out");
+                userSession.classList.add('hidden');
+                userSession.classList.remove('flex');
+                firmPortalLink.classList.remove('hidden');
+                firmPortalLinkMobile.classList.remove('hidden');
+            }
+        });
+
+
+        // --- FIRESTORE & CONSULTATION FORM LOGIC ---
+        const consultationForm = document.getElementById('consultation-form');
+        const formMessage = document.getElementById('form-message');
+
+        consultationForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            formMessage.textContent = '';
+
+            const name = document.getElementById('consult-name').value;
+            const email = document.getElementById('consult-email').value;
+            const caseDetails = document.getElementById('consult-details').value;
+
+            try {
+                // Save to Firestore
+                const docRef = await addDoc(collection(db, "consultations"), {
+                    name: name,
+                    email: email,
+                    caseDetails: caseDetails,
+                    submittedAt: serverTimestamp(),
+                    status: "New"
+                });
+                console.log("Document written with ID: ", docRef.id);
+
+                formMessage.textContent = 'Thank you! Your request has been sent.';
+                formMessage.classList.add('text-green-400');
+                formMessage.classList.remove('text-red-400');
+                consultationForm.reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                formMessage.textContent = 'An error occurred. Please try again.';
+                formMessage.classList.add('text-red-400');
+                formMessage.classList.remove('text-green-400');
+            }
+
+            setTimeout(() => {
+                formMessage.textContent = '';
+            }, 5000);
+        });
+
+
+        // --- GENERAL UI SCRIPT ---
+        // Mobile Menu Toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when a link is clicked
+        const mobileNavLinks = mobileMenu.querySelectorAll('a');
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (!link.id.includes('firm-portal-link')) { // don't close for portal link
+                    mobileMenu.classList.add('hidden');
+                }
+            });
+        });
+
+        // Fade-in effect on scroll
+        const sections = document.querySelectorAll('.fade-in-section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+
+    </script>
+</body>
+</html>
+
+

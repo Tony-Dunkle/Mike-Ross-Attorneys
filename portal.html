@@ -1,0 +1,1297 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firm Portal | Mike Ross & Attorneys</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* bg-gray-800 */
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* bg-gray-600 */
+            border-radius: 4px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #6b7280; /* bg-gray-500 */
+            }
+        /* Style for modals and case detail view */
+        .modal-backdrop, .case-file-backdrop {
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content, .case-file-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        /* Styles for new case filter buttons */
+        .case-filter-btn {
+            padding: 8px 16px;
+            border-radius: 9999px; /* pill shape */
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background-color: #374151; /* bg-gray-700 */
+            color: #d1d5db; /* text-gray-300 */
+        }
+
+            .case-filter-btn:hover {
+                background-color: #4b5563; /* bg-gray-600 */
+            }
+
+            .case-filter-btn.active {
+                background-color: #facc15; /* bg-yellow-400 */
+                color: #111827; /* text-gray-900 */
+            }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <!-- Auth guard: This section will be hidden if user is logged in -->
+    <div id="auth-blocker" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center">
+        <h1 class="text-3xl font-bold text-white mb-4">Access Denied</h1>
+        <p class="text-gray-400 mb-8">You must be logged in to view the Firm Portal.</p>
+        <div id="loading-spinner" class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+        <a href="index.html" id="redirect-link" class="hidden mt-8 text-yellow-400 hover:text-yellow-300">Click here to log in</a>
+    </div>
+
+    <!-- Main Portal Content -->
+    <div id="portal-content" class="hidden min-h-screen flex">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-gray-800 p-6 flex-shrink-0 flex flex-col">
+            <div class="flex items-center mb-10">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mr-3 text-yellow-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265-4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-6.866-1.918 5.988 5.988 0 01-6.866 1.918c-.483-.174-.711-.703-.59-1.202L5.25 4.97m13.5 0l-2.62 10.726m0 0l-2.62-10.726" />
+                </svg>
+                <h2 class="text-xl font-bold text-white">Firm Portal</h2>
+            </div>
+            <nav id="main-nav" class="flex flex-col space-y-2">
+                <a href="#dashboard" class="nav-link bg-gray-700 text-white flex items-center px-4 py-3 rounded-lg">Dashboard</a>
+                <a href="#cases" class="nav-link text-gray-400 hover:bg-gray-700 hover:text-white flex items-center px-4 py-3 rounded-lg">Case Management</a>
+                <a href="#financials" class="nav-link text-gray-400 hover:bg-gray-700 hover:text-white flex items-center px-4 py-3 rounded-lg">Financials</a>
+                <a href="#calendar" class="nav-link text-gray-400 hover:bg-gray-700 hover:text-white flex items-center px-4 py-3 rounded-lg">Calendar</a>
+            </nav>
+
+            <div id="admin-redirect-container" class="hidden mt-8">
+                <h3 class="px-4 text-sm font-semibold text-gray-500 uppercase tracking-wider">Admin</h3>
+                <a href="admin.html" class="mt-2 text-yellow-400 hover:bg-gray-700 hover:text-yellow-300 flex items-center px-4 py-3 rounded-lg">Go to Admin Portal &rarr;</a>
+            </div>
+
+            <div class="mt-auto">
+                <div id="user-session" class="text-center">
+                    <p class="text-sm text-gray-400">Logged in as:</p>
+                    <span id="user-email" class="text-yellow-400 font-medium"></span>
+                    <p class="text-xs text-gray-500" id="user-role"></p>
+                    <button id="logout-button" class="mt-4 w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-500 transition-colors duration-300">Logout</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-8 overflow-y-auto">
+
+            <!-- Dashboard View -->
+            <div id="dashboard" class="page-content">
+                <h1 class="text-3xl font-bold text-white mb-6">Dashboard</h1>
+                <p class="text-gray-400">Welcome to the firm portal. Select a section from the left to get started.</p>
+            </div>
+
+            <!-- Case Management View -->
+            <div id="cases" class="page-content hidden">
+                <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+                    <h1 class="text-3xl font-bold text-white">Case Management</h1>
+                    <button id="create-case-btn" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors duration-300 w-full md:w-auto">Create New Case</button>
+                </div>
+
+                <!-- Search and Filter Bar -->
+                <div class="mb-6 bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col md:flex-row gap-4 items-center">
+                    <div class="relative flex-grow w-full md:w-auto">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                        <input type="text" id="case-search-input" placeholder="Search by client name, case ID, or attorney..." class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 pl-10 focus:ring-yellow-400 focus:border-yellow-400">
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap justify-center" id="case-status-filters">
+                        <button class="case-filter-btn" data-status="All">All</button>
+                        <button class="case-filter-btn" data-status="Active">Active</button>
+                        <button class="case-filter-btn" data-status="Pending">Pending</button>
+                        <button class="case-filter-btn" data-status="Closed">Closed</button>
+                    </div>
+                </div>
+
+                <!-- Cases Grid -->
+                <div id="cases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Case cards will be dynamically injected here -->
+                </div>
+                <div id="no-cases-message" class="hidden text-center p-10 text-gray-500">
+                    <p>No cases found matching your criteria.</p>
+                </div>
+            </div>
+            <!-- Financials View -->
+            <div id="financials" class="page-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-white">Financials</h1>
+                    <button id="add-transaction-btn" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors duration-300">Add Transaction</button>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                        <h4 class="text-sm font-semibold text-gray-400">Total Revenue</h4>
+                        <p id="total-revenue" class="text-3xl font-bold text-green-400 mt-2">$0.00</p>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                        <h4 class="text-sm font-semibold text-gray-400">Total Expenses</h4>
+                        <p id="total-expenses" class="text-3xl font-bold text-red-400 mt-2">$0.00</p>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                        <h4 class="text-sm font-semibold text-gray-400">Net Profit / Loss</h4>
+                        <p id="net-profit" class="text-3xl font-bold text-white mt-2">$0.00</p>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-4">Monthly Overview</h3>
+                    <canvas id="financials-chart"></canvas>
+                </div>
+
+                <!-- Filters and Table -->
+                <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                    <div class="p-4 bg-gray-700/30 flex flex-wrap gap-4 items-center justify-between">
+                        <h3 class="text-lg font-semibold text-white">All Transactions</h3>
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <div>
+                                <label for="financials-date-start" class="text-sm text-gray-400 mr-2">From:</label>
+                                <input type="date" id="financials-date-start" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm">
+                            </div>
+                            <div>
+                                <label for="financials-date-end" class="text-sm text-gray-400 mr-2">To:</label>
+                                <input type="date" id="financials-date-end" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm">
+                            </div>
+                            <div>
+                                <select id="financials-type-filter" class="bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm">
+                                    <option value="All">All Types</option>
+                                    <option value="Retainer">Retainer</option>
+                                    <option value="Payment">Payment</option>
+                                    <option value="Expense">Expense</option>
+                                    <option value="Fine Paid">Fine Paid</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-700/50">
+                                <tr>
+                                    <th class="p-4 font-semibold">Date</th>
+                                    <th class="p-4 font-semibold">Type</th>
+                                    <th class="p-4 font-semibold">Description</th>
+                                    <th class="p-4 font-semibold">Case/Client</th>
+                                    <th class="p-4 font-semibold text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table-body">
+                                <!-- Transaction data will be dynamically injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar View (Placeholder) -->
+            <div id="calendar" class="page-content hidden">
+                <h1 class="text-3xl font-bold text-white mb-6">Calendar</h1>
+                <p class="text-gray-400">Firm Calendar will be built here.</p>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div id="transaction-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden" style="opacity: 0;">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 border border-gray-700" style="transform: scale(0.95);">
+            <h2 class="text-2xl font-bold text-white mb-6">Log New Transaction</h2>
+            <form id="transaction-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Transaction Type -->
+                    <div>
+                        <label for="transaction-type" class="block text-sm font-medium text-gray-400 mb-1">Type</label>
+                        <select id="transaction-type" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-yellow-400 focus:border-yellow-400">
+                            <option>Retainer</option>
+                            <option>Payment</option>
+                            <option>Expense</option>
+                            <option>Fine Paid</option>
+                        </select>
+                    </div>
+                    <!-- Amount -->
+                    <div>
+                        <label for="transaction-amount" class="block text-sm font-medium text-gray-400 mb-1">Amount</label>
+                        <input type="number" id="transaction-amount" step="0.01" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-yellow-400 focus:border-yellow-400" placeholder="5000.00">
+                    </div>
+                </div>
+                <!-- Associated Client/Case -->
+                <div class="mt-4">
+                    <label for="transaction-client" class="block text-sm font-medium text-gray-400 mb-1">Associated Client/Case ID</label>
+                    <input type="text" id="transaction-client" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-yellow-400 focus:border-yellow-400" placeholder="e.g., AbCd123Ef - Michael De Santa">
+                </div>
+                <!-- Description -->
+                <div class="mt-4">
+                    <label for="transaction-description" class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                    <textarea id="transaction-description" rows="3" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-yellow-400 focus:border-yellow-400" placeholder="Details about the transaction..."></textarea>
+                </div>
+                <!-- Buttons -->
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-transaction-btn" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-500 transition-colors duration-300">Cancel</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors duration-300">Log Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Case Modal -->
+    <div id="case-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden" style="opacity: 0;">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 border border-gray-700" style="transform: scale(0.95);">
+            <h2 class="text-2xl font-bold text-white mb-6">Create New Case</h2>
+            <form id="case-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="case-client-name" class="block text-sm font-medium text-gray-400 mb-1">Client Name</label>
+                        <input type="text" id="case-client-name" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="e.g., John Doe">
+                    </div>
+                    <div>
+                        <label for="case-base-price" class="block text-sm font-medium text-gray-400 mb-1">Base Price ($)</label>
+                        <input type="number" id="case-base-price" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="e.g., 25000">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label for="case-assigned-attorney" class="block text-sm font-medium text-gray-400 mb-1">Assigned Attorney</label>
+                    <input type="text" id="case-assigned-attorney" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="e.g., Mike Ross">
+                </div>
+                <div class="mt-4">
+                    <label for="case-summary" class="block text-sm font-medium text-gray-400 mb-1">Case Summary</label>
+                    <textarea id="case-summary" rows="3" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="Brief details about the case..."></textarea>
+                </div>
+                <!-- Buttons -->
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-case-btn" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-500 transition-colors duration-300">Cancel</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors duration-300">Create Case</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Evidence Modal -->
+    <div id="add-evidence-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden" style="opacity: 0;">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6 border border-gray-700" style="transform: scale(0.95);">
+            <h2 class="text-2xl font-bold text-white mb-6">Upload & Log Evidence</h2>
+            <form id="add-evidence-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="evidence-title" class="block text-sm font-medium text-gray-400 mb-1">Title / Name</label>
+                        <input type="text" id="evidence-title" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="e.g., Security Footage">
+                    </div>
+                    <div>
+                        <label for="evidence-type" class="block text-sm font-medium text-gray-400 mb-1">Type of Evidence</label>
+                        <select id="evidence-type" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:ring-yellow-400 focus:border-yellow-400">
+                            <option>Document</option>
+                            <option>Photograph</option>
+                            <option>Video</option>
+                            <option>Audio Recording</option>
+                            <option>Physical Object</option>
+                            <option>External Link</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label for="evidence-file" class="block text-sm font-medium text-gray-400 mb-1">Upload File (Optional)</label>
+                    <input type="file" id="evidence-file" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-700 hover:file:bg-yellow-200">
+                    <p id="evidence-file-name" class="text-xs text-gray-500 mt-1"></p>
+                </div>
+                <div class="mt-4">
+                    <label for="evidence-description" class="block text-sm font-medium text-gray-400 mb-1">Description / Link</label>
+                    <textarea id="evidence-description" rows="3" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="Details or URL to the evidence..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-evidence-btn" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg">Add Evidence</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Witness Modal -->
+    <div id="add-witness-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden" style="opacity: 0;">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 border border-gray-700" style="transform: scale(0.95);">
+            <h2 class="text-2xl font-bold text-white mb-6">Add Witness</h2>
+            <form id="add-witness-form">
+                <div>
+                    <label for="witness-name" class="block text-sm font-medium text-gray-400 mb-1">Witness Name</label>
+                    <input type="text" id="witness-name" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="e.g., Jane Smith">
+                </div>
+                <div class="mt-4">
+                    <label for="witness-statement" class="block text-sm font-medium text-gray-400 mb-1">Statement</label>
+                    <textarea id="witness-statement" rows="4" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="Witness testimony or key points..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-witness-btn" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg">Add Witness</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Charge Modal -->
+    <div id="add-charge-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden" style="opacity: 0;">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 border border-gray-700" style="transform: scale(0.95);">
+            <h2 class="text-2xl font-bold text-white mb-6">Add Charge to Case</h2>
+            <form id="add-charge-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="charge-description" class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                        <input type="text" id="charge-description" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="e.g., Document Filing Fee">
+                    </div>
+                    <div>
+                        <label for="charge-amount" class="block text-sm font-medium text-gray-400 mb-1">Amount ($)</label>
+                        <input type="number" id="charge-amount" step="0.01" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" placeholder="e.g., 500.00">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-charge-btn" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg">Add Charge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[60] hidden" style="opacity: 0;">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 border border-red-500" style="transform: scale(0.95);">
+            <h2 id="confirmation-title" class="text-2xl font-bold text-red-400 mb-4">Confirm Action</h2>
+            <p id="confirmation-message" class="text-gray-300 mb-6">Are you sure you want to proceed? This action cannot be undone.</p>
+            <div class="flex justify-end space-x-4">
+                <button id="cancel-confirmation-btn" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="confirm-action-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case Detail View -->
+    <div id="case-file-backdrop" class="case-file-backdrop fixed inset-0 bg-gray-900 bg-opacity-80 z-40 hidden" style="opacity: 0;">
+        <div id="case-file-content" class="case-file-content absolute top-0 right-0 h-full w-full max-w-4xl bg-gray-800 shadow-2xl border-l-2 border-yellow-400 p-8 overflow-y-auto" style="transform: translateX(100%); opacity:0;">
+            <!-- Case File Content will be loaded here -->
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, addDoc, onSnapshot, query, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+
+        // --- DEBUGGING ---
+        const DEBUG = true; // Set to false to disable logs
+        function debugLog(...args) {
+            if (DEBUG) {
+                console.log('[Portal Debug]', ...args);
+            }
+        }
+        debugLog("Portal script initializing...");
+
+
+        // --- DISCORD WEBHOOK CONFIGURATION ---
+        const webhookURLs = {
+            financials: "https://discord.com/api/webhooks/your_financials_webhook_url",
+            management: "https://discord.com/api/webhooks/your_management_webhook_url",
+            cases: "https://discord.com/api/webhooks/your_case_updates_webhook_url"
+        };
+        const EXPENSE_APPROVAL_THRESHOLD = 50000;
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDzac6Aex6lLCzpz0yedIIYcUX0wuTZwU",
+            authDomain: "mike-ross-attorneys.firebaseapp.com",
+            projectId: "mike-ross-attorneys",
+            storageBucket: "mike-ross-attorneys.appspot.com",
+            messagingSenderId: "812906116208",
+            appId: "1:812906116208:web:71e217e944a6f937d9435b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        const authBlocker = document.getElementById('auth-blocker');
+        const portalContent = document.getElementById('portal-content');
+        const userEmailSpan = document.getElementById('user-email');
+        const logoutButton = document.getElementById('logout-button');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const redirectLink = document.getElementById('redirect-link');
+        const userRoleSpan = document.getElementById('user-role');
+        const adminRedirectContainer = document.getElementById('admin-redirect-container');
+        const transactionsTableBody = document.getElementById('transactions-table-body');
+        const casesGrid = document.getElementById('cases-grid');
+        const caseFileBackdrop = document.getElementById('case-file-backdrop');
+        const caseFileContent = document.getElementById('case-file-content');
+        let currentCaseId = null;
+        let currentUserRole = 'Staff'; // Default role
+
+        // --- Helper Function to Send Discord Webhook ---
+        async function sendToDiscord(webhookUrl, embed) {
+            if (!webhookUrl || webhookUrl.includes("your_webhook_url")) {
+                console.warn("Discord webhook URL is a placeholder. Skipping notification.");
+                return;
+            }
+            try {
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        embeds: [embed],
+                        username: "Mike Ross & Attorneys Portal",
+                        avatar_url: "https://i.imgur.com/g5p9k4e.png"
+                    }),
+                });
+            } catch (error) {
+                console.error('Error sending to Discord:', error);
+            }
+        }
+
+        // Function to check user role and update UI
+        const checkUserRole = async (uid) => {
+            debugLog('Checking role for user:', uid);
+            const userDocRef = doc(db, "users", uid);
+            try {
+                debugLog("Fetching user document from Firestore...");
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    debugLog("User document found. Data:", userData);
+                    currentUserRole = userData.role;
+                    userRoleSpan.textContent = `(${currentUserRole})`;
+                    debugLog('Detected role:', currentUserRole);
+                    if (['Managing Partner', 'Senior Partner'].includes(currentUserRole)) {
+                        adminRedirectContainer.classList.remove('hidden');
+                    } else {
+                        adminRedirectContainer.classList.add('hidden');
+                    }
+                } else {
+                    console.error('CRITICAL: User document not found in Firestore for UID:', uid, '. Defaulting to Staff role.');
+                    currentUserRole = 'Staff';
+                    userRoleSpan.textContent = `(Staff)`;
+                    adminRedirectContainer.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Error getting user role:", error);
+                currentUserRole = 'Staff';
+                userRoleSpan.textContent = `(Staff)`;
+                adminRedirectContainer.classList.add('hidden');
+            }
+        };
+
+        // --- Real-time Listeners ---
+        let transactionsUnsubscribe = null;
+        let casesUnsubscribe = null;
+        let evidenceUnsubscribe = null;
+        let witnessesUnsubscribe = null;
+        let logUnsubscribe = null;
+        let caseFinanceUnsubscribe = null;
+        let caseChargesUnsubscribe = null;
+        let allTransactions = [];
+        let financialsChart = null;
+
+
+        const renderFinancials = () => {
+            const dateStartInput = document.getElementById('financials-date-start').value;
+            const dateEndInput = document.getElementById('financials-date-end').value;
+            const typeFilter = document.getElementById('financials-type-filter').value;
+
+            // 1. Filter transactions
+            const filteredTransactions = allTransactions.filter(t => {
+                const transactionDate = new Date(t.createdAt);
+                const startDate = dateStartInput ? new Date(dateStartInput) : null;
+                const endDate = dateEndInput ? new Date(dateEndInput) : null;
+
+                if (startDate) startDate.setHours(0, 0, 0, 0);
+                if (endDate) endDate.setHours(23, 59, 59, 999);
+
+                const isAfterStart = startDate ? transactionDate >= startDate : true;
+                const isBeforeEnd = endDate ? transactionDate <= endDate : true;
+                const matchesType = typeFilter === 'All' || t.type === typeFilter;
+
+                return isAfterStart && isBeforeEnd && matchesType;
+            });
+
+
+            // 2. Calculate and render summary cards
+            let totalRevenue = 0;
+            let totalExpenses = 0;
+            filteredTransactions.forEach(t => {
+                if (['Retainer', 'Payment'].includes(t.type)) {
+                    totalRevenue += t.amount;
+                } else {
+                    totalExpenses += t.amount;
+                }
+            });
+            const netProfit = totalRevenue - totalExpenses;
+
+            document.getElementById('total-revenue').textContent = `$${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('total-expenses').textContent = `$${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const netProfitEl = document.getElementById('net-profit');
+            netProfitEl.textContent = `$${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            netProfitEl.className = `text-3xl font-bold mt-2 ${netProfit >= 0 ? 'text-green-400' : 'text-red-400'}`;
+
+            // 3. Render table
+            transactionsTableBody.innerHTML = '';
+            if (filteredTransactions.length === 0) {
+                transactionsTableBody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-gray-500">No transactions found for the selected filters.</td></tr>`;
+            } else {
+                filteredTransactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).forEach(transaction => {
+                    const isIncome = ['Retainer', 'Payment'].includes(transaction.type);
+                    const amountClass = isIncome ? 'text-green-400' : 'text-red-400';
+                    const amountSign = isIncome ? '+' : '-';
+                    const typeColors = { 'Retainer': 'bg-green-600 text-green-100', 'Payment': 'bg-green-600 text-green-100', 'Expense': 'bg-red-600 text-red-100', 'Fine Paid': 'bg-red-600 text-red-100' };
+                    transactionsTableBody.innerHTML += `<tr class="border-b border-gray-700">
+                            <td class="p-4">${new Date(transaction.createdAt).toLocaleDateString()}</td>
+                            <td class="p-4"><span class="px-2 py-1 text-xs font-semibold ${typeColors[transaction.type] || 'bg-gray-600'} rounded-full">${transaction.type}</span></td>
+                            <td class="p-4">${transaction.description}</td><td class="p-4">${transaction.client}</td>
+                            <td class="p-4 text-right font-mono ${amountClass}">${amountSign}$${transaction.amount.toFixed(2)}</td>
+                        </tr>`;
+                });
+            }
+
+            // 4. Prepare data and render chart (using all transactions, not filtered, for historical view)
+            const monthlyData = {};
+            const twelveMonthsAgo = new Date();
+            twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+            twelveMonthsAgo.setDate(1);
+
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(twelveMonthsAgo);
+                date.setMonth(date.getMonth() + i);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                monthlyData[monthKey] = { revenue: 0, expenses: 0 };
+            }
+
+            allTransactions.forEach(t => {
+                const tDate = new Date(t.createdAt);
+                if (tDate >= twelveMonthsAgo) {
+                    const monthKey = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (monthlyData[monthKey]) {
+                        if (['Retainer', 'Payment'].includes(t.type)) monthlyData[monthKey].revenue += t.amount;
+                        else monthlyData[monthKey].expenses += t.amount;
+                    }
+                }
+            });
+
+            const labels = Object.keys(monthlyData).map(key => new Date(key + '-02').toLocaleString('default', { month: 'short', year: '2-digit' }));
+            const revenueData = Object.values(monthlyData).map(d => d.revenue);
+            const expensesData = Object.values(monthlyData).map(d => d.expenses);
+            renderFinancialsChart(labels, revenueData, expensesData);
+        };
+
+        const renderFinancialsChart = (labels, revenueData, expensesData) => {
+            const ctx = document.getElementById('financials-chart').getContext('2d');
+            if (financialsChart) {
+                financialsChart.destroy();
+            }
+            financialsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Revenue', data: revenueData, backgroundColor: 'rgba(52, 211, 153, 0.7)', borderColor: 'rgba(52, 211, 153, 1)', borderWidth: 1 },
+                        { label: 'Expenses', data: expensesData, backgroundColor: 'rgba(248, 113, 113, 0.7)', borderColor: 'rgba(248, 113, 113, 1)', borderWidth: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#4b5563' } },
+                        x: { ticks: { color: '#9ca3af' }, grid: { color: '#4b5563' } }
+                    },
+                    plugins: { legend: { labels: { color: '#d1d5db' } } }
+                }
+            });
+        };
+
+
+        const listenForTransactions = () => {
+            const q = query(collection(db, "transactions"));
+            transactionsUnsubscribe = onSnapshot(q, (snapshot) => {
+                allTransactions = [];
+                snapshot.forEach(doc => allTransactions.push(doc.data()));
+                renderFinancials();
+            }, (error) => {
+                console.error("Error listening for transaction updates:", error);
+                transactionsTableBody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-red-400">Error loading transactions. Check console.</td></tr>`;
+            });
+        };
+
+        const listenForCases = () => {
+            const noCasesMessage = document.getElementById('no-cases-message');
+            const searchInput = document.getElementById('case-search-input');
+            const filterButtons = document.querySelectorAll('.case-filter-btn');
+            let allCases = [];
+            let currentFilter = 'All';
+
+            const renderCases = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                const filteredCases = allCases.filter(caseData => {
+                    const matchesFilter = currentFilter === 'All' || caseData.status === currentFilter;
+                    const matchesSearch = !searchTerm ||
+                        caseData.clientName.toLowerCase().includes(searchTerm) ||
+                        caseData.id.toLowerCase().includes(searchTerm) ||
+                        caseData.assignedTo.toLowerCase().includes(searchTerm);
+                    return matchesFilter && matchesSearch;
+                });
+                casesGrid.innerHTML = '';
+                if (filteredCases.length === 0) {
+                    noCasesMessage.classList.remove('hidden');
+                    casesGrid.classList.add('hidden');
+                } else {
+                    noCasesMessage.classList.add('hidden');
+                    casesGrid.classList.remove('hidden');
+                }
+                filteredCases.forEach(caseData => {
+                    const statusColors = {
+                        'Active': 'bg-blue-600 text-blue-100', 'Pending': 'bg-yellow-600 text-yellow-100',
+                        'Closed': 'bg-gray-600 text-gray-100', 'Archived': 'bg-purple-600 text-purple-100'
+                    };
+                    const statusColor = statusColors[caseData.status] || 'bg-gray-600';
+                    const card = document.createElement('div');
+                    card.className = "case-card bg-gray-800 rounded-lg border border-gray-700 p-5 flex flex-col hover:border-yellow-400 transition-all duration-200 cursor-pointer";
+                    card.dataset.caseId = caseData.id;
+                    card.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <h3 class="text-lg font-bold text-white mb-2">${caseData.clientName}</h3>
+                                <span class="px-2 py-1 text-xs font-semibold ${statusColor} rounded-full">${caseData.status}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 font-mono mb-4">ID: ${caseData.id.substring(0, 8)}...</p>
+                            <div class="space-y-3 text-sm mt-auto">
+                                <div class="flex items-center text-gray-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2 text-gray-500"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.75a9.99 9.99 0 00-6.535 1.743z" /></svg>
+                                    <span class="text-gray-400 mr-2">Assigned:</span>
+                                    <span class="font-medium text-white">${caseData.assignedTo}</span>
+                                </div>
+                                <div class="flex items-center text-gray-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2 text-gray-500"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c0-.414.336-.75.75-.75h10.5a.75.75 0 010 1.5H5.5a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>
+                                    <span class="text-gray-400 mr-2">Opened:</span>
+                                    <span class="font-medium text-white">${new Date(caseData.createdAt).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        `;
+                    casesGrid.appendChild(card);
+                });
+            };
+
+            searchInput.addEventListener('input', renderCases);
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.status;
+                    renderCases();
+                });
+            });
+            // Robustly set initial active filter button
+            const initialActiveButton = document.querySelector('.case-filter-btn[data-status="All"]');
+            if (initialActiveButton) {
+                initialActiveButton.classList.add('active');
+            }
+
+            const q = query(collection(db, "cases"));
+            casesUnsubscribe = onSnapshot(q, (snapshot) => {
+                allCases = [];
+                snapshot.forEach(doc => allCases.push({ id: doc.id, ...doc.data() }));
+                allCases.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                renderCases();
+            }, (error) => {
+                console.error("Error listening for case updates:", error);
+                casesGrid.innerHTML = `<p class="text-red-400 col-span-full text-center">Error loading cases.</p>`;
+            });
+        };
+
+
+        // Auth state listener
+        onAuthStateChanged(auth, async (user) => {
+            debugLog("onAuthStateChanged triggered.");
+            if (user) {
+                debugLog("User is logged in:", user);
+                userEmailSpan.textContent = user.email;
+
+                try {
+                    debugLog("Attempting to check user role...");
+                    await checkUserRole(user.uid);
+                    debugLog("User role check complete. Role:", currentUserRole);
+
+                    debugLog("Showing portal content and loading data...");
+                    authBlocker.classList.add('hidden');
+                    portalContent.classList.remove('hidden');
+                    listenForTransactions();
+                    listenForCases();
+
+                    // Setup financials filter listeners
+                    document.getElementById('financials-date-start').addEventListener('change', renderFinancials);
+                    document.getElementById('financials-date-end').addEventListener('change', renderFinancials);
+                    document.getElementById('financials-type-filter').addEventListener('change', renderFinancials);
+
+                } catch (error) {
+                    console.error("CRITICAL ERROR during post-login setup:", error);
+                    loadingSpinner.classList.add('hidden');
+                    redirectLink.classList.remove('hidden');
+                    redirectLink.textContent = "An error occurred. Click to go back."
+                }
+
+            } else {
+                debugLog("User is not logged in. Showing auth blocker.");
+                loadingSpinner.classList.add('hidden');
+                redirectLink.classList.remove('hidden');
+                authBlocker.classList.remove('hidden');
+                portalContent.classList.add('hidden');
+                if (transactionsUnsubscribe) transactionsUnsubscribe();
+                if (casesUnsubscribe) casesUnsubscribe();
+            }
+        });
+
+        // Handle logout
+        logoutButton.addEventListener('click', async () => {
+            debugLog("Logout button clicked.");
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error("Logout failed:", error);
+            }
+        });
+
+        // --- Generic Modal Logic ---
+        const setupModal = (modalId, openBtnId, cancelBtnId, formId, onOpen = () => { }, onClose = () => { }) => {
+            const modal = document.getElementById(modalId);
+            const openBtn = document.getElementById(openBtnId);
+            const cancelBtn = document.getElementById(cancelBtnId);
+            const form = formId ? document.getElementById(formId) : null;
+
+            const open = () => {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.style.opacity = '1';
+                    modal.querySelector('.modal-content').style.transform = 'scale(1)';
+                }, 10);
+                onOpen();
+            };
+
+            const close = () => {
+                modal.style.opacity = '0';
+                modal.querySelector('.modal-content').style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    if (form) form.reset();
+                }, 300);
+                onClose();
+            };
+
+            if (openBtn) openBtn.addEventListener('click', open);
+            if (cancelBtn) cancelBtn.addEventListener('click', close);
+            modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+            return { open, close };
+        };
+
+        // Setup Transaction Modal
+        const { close: closeTransactionModal } = setupModal('transaction-modal', 'add-transaction-btn', 'cancel-transaction-btn', 'transaction-form');
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const loggedInUser = auth.currentUser ? auth.currentUser.email : 'Unknown User';
+            const type = document.getElementById('transaction-type').value;
+            const amount = parseFloat(document.getElementById('transaction-amount').value);
+            const client = document.getElementById('transaction-client').value;
+            const description = document.getElementById('transaction-description').value;
+            try {
+                await addDoc(collection(db, 'transactions'), { type, amount, client, description, loggedBy: loggedInUser, createdAt: new Date().toISOString() });
+                const isIncome = ['Retainer', 'Payment'].includes(type);
+                const financialEmbed = { title: "Financial Transaction Logged", color: isIncome ? 3066993 : 15158332, fields: [{ name: "Amount", value: `\`${isIncome ? '+' : '-'}$${amount.toFixed(2)}\``, inline: true }, { name: "Type", value: type, inline: true }, { name: "Client/Case", value: client, inline: false }, { name: "Description", value: description, inline: false }, { name: "Logged By", value: loggedInUser, inline: true }], timestamp: new Date().toISOString() };
+                await sendToDiscord(webhookURLs.financials, financialEmbed);
+                if (type === 'Expense' && amount > EXPENSE_APPROVAL_THRESHOLD) {
+                    const approvalEmbed = { title: "High-Value Expense Requires Approval", color: 16729344, fields: [{ name: "Amount", value: `\`-${amount.toFixed(2)}\``, inline: true }, { name: "Submitted By", value: loggedInUser, inline: true }, { name: "Description", value: description, inline: false },], footer: { text: "Action Required in Firm Portal" }, timestamp: new Date().toISOString() };
+                    await sendToDiscord(webhookURLs.management, approvalEmbed);
+                }
+                closeTransactionModal();
+            } catch (error) { console.error("Error adding transaction:", error); alert("Failed to add transaction."); }
+        });
+
+        // Setup Case Modal
+        const { close: closeCaseModal } = setupModal('case-modal', 'create-case-btn', 'cancel-case-btn', 'case-form');
+        document.getElementById('case-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const clientName = document.getElementById('case-client-name').value;
+            const assignedTo = document.getElementById('case-assigned-attorney').value;
+            const summary = document.getElementById('case-summary').value;
+            const basePrice = parseFloat(document.getElementById('case-base-price').value);
+            try {
+                const docRef = await addDoc(collection(db, "cases"), { clientName, assignedTo, summary, basePrice, status: 'Active', createdAt: new Date().toISOString() });
+                const caseEmbed = { title: `New Case Opened: #${docRef.id.substring(0, 8)}`, color: 3447003, fields: [{ name: "Client", value: clientName, inline: true }, { name: "Assigned To", value: assignedTo, inline: true }, { name: "Base Price", value: `$${basePrice.toFixed(2)}`, inline: true }, { name: "Summary", value: summary, inline: false }], timestamp: new Date().toISOString() };
+                await sendToDiscord(webhookURLs.cases, caseEmbed);
+                closeCaseModal();
+            } catch (error) { console.error("Error creating case:", error); alert("Failed to create case."); }
+        });
+
+        // Setup Evidence, Witness, & Charge Modals
+        const { open: openEvidenceModal, close: closeEvidenceModal } = setupModal('add-evidence-modal', null, 'cancel-evidence-btn', 'add-evidence-form', () => { }, () => { document.getElementById('evidence-file-name').textContent = ''; });
+        const { open: openWitnessModal, close: closeWitnessModal } = setupModal('add-witness-modal', null, 'cancel-witness-btn', 'add-witness-form');
+        const { open: openChargeModal, close: closeChargeModal } = setupModal('add-charge-modal', null, 'cancel-charge-btn', 'add-charge-form');
+
+        // --- Confirmation Modal Logic ---
+        let confirmationResolve = null;
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmationTitle = document.getElementById('confirmation-title');
+        const confirmationMessage = document.getElementById('confirmation-message');
+        const confirmActionBtn = document.getElementById('confirm-action-btn');
+        const cancelConfirmationBtn = document.getElementById('cancel-confirmation-btn');
+
+        function showConfirmation(title, message) {
+            return new Promise((resolve) => {
+                confirmationTitle.textContent = title;
+                confirmationMessage.textContent = message;
+                confirmationModal.classList.remove('hidden');
+                setTimeout(() => {
+                    confirmationModal.style.opacity = '1';
+                    confirmationModal.querySelector('.modal-content').style.transform = 'scale(1)';
+                }, 10);
+                confirmationResolve = resolve;
+            });
+        }
+
+        function closeConfirmation() {
+            confirmationModal.style.opacity = '0';
+            confirmationModal.querySelector('.modal-content').style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                confirmationModal.classList.add('hidden');
+            }, 300);
+        }
+
+        confirmActionBtn.addEventListener('click', () => {
+            if (confirmationResolve) confirmationResolve(true);
+            closeConfirmation();
+        });
+
+        cancelConfirmationBtn.addEventListener('click', () => {
+            if (confirmationResolve) confirmationResolve(false);
+            closeConfirmation();
+        });
+
+        confirmationModal.addEventListener('click', e => {
+            if (e.target === confirmationModal) {
+                if (confirmationResolve) confirmationResolve(false);
+                closeConfirmation();
+            }
+        });
+
+
+        // --- Case File Detail View Logic ---
+        const openCaseFile = async (caseId) => {
+            currentCaseId = caseId;
+            const caseSnap = await getDoc(doc(db, "cases", caseId));
+            if (!caseSnap.exists()) { alert("Case not found!"); return; }
+            const caseData = caseSnap.data();
+
+            const caseFileHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <input type="text" id="case-file-client-name" class="text-3xl font-bold text-white bg-transparent border-b-2 border-transparent focus:border-yellow-400 focus:outline-none" value="${caseData.clientName}">
+                            <p class="text-gray-400 font-mono text-sm">Case ID: ${caseId}</p>
+                        </div>
+                        <button id="close-case-file-btn" class="text-3xl font-bold text-gray-400 hover:text-white leading-none p-1">&times;</button>
+                    </div>
+                    <div class="mt-6 border-b border-gray-600">
+                        <nav id="case-file-tabs" class="flex space-x-6 -mb-px">
+                            <a href="#overview" class="case-tab py-2 border-b-2 border-yellow-400 text-yellow-400 font-semibold">Overview</a>
+                            <a href="#evidence" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Evidence</a>
+                            <a href="#witnesses" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Witnesses</a>
+                            <a href="#log" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Case Log</a>
+                            <a href="#finances" class="case-tab py-2 border-b-2 border-transparent text-gray-400 hover:text-white">Finances</a>
+                        </nav>
+                    </div>
+                    <div id="case-file-tab-content" class="mt-6">
+                        <div id="overview" class="case-tab-content">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <!-- Left Column: Details -->
+                                <div class="lg:col-span-2">
+                                    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Assigned Attorney</label><input type="text" id="case-file-assigned-attorney" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" value="${caseData.assignedTo}"></div>
+                                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Case Status</label><select id="case-status-select" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5"><option value="Active" ${caseData.status === 'Active' ? 'selected' : ''}>Active</option><option value="Pending" ${caseData.status === 'Pending' ? 'selected' : ''}>Pending</option><option value="Closed" ${caseData.status === 'Closed' ? 'selected' : ''}>Closed</option><option value="Archived" ${caseData.status === 'Archived' ? 'selected' : ''}>Archived</option></select></div>
+                                        </div>
+                                        <div class="mt-6"><label class="block text-sm font-medium text-gray-400 mb-1">Case Summary</label><textarea id="case-file-summary" rows="6" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5">${caseData.summary}</textarea></div>
+                                        <div class="mt-6 flex justify-end"><button id="update-case-btn" class="bg-yellow-400 text-gray-900 font-bold py-2 px-5 rounded-lg hover:bg-yellow-300">Save Changes</button></div>
+                                    </div>
+                                    <div id="admin-actions-container" class="hidden mt-6 bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                                        <h3 class="text-lg font-semibold text-red-400 mb-4">Admin Actions</h3>
+                                        <div class="flex flex-wrap gap-4">
+                                            <button id="archive-case-btn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-500 text-sm">Archive Case</button>
+                                            <button id="delete-case-btn" class="bg-transparent border border-red-500 text-red-400 font-bold py-2 px-4 rounded-lg hover:bg-red-500/20 text-sm">Delete Case Permanently</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Right Column: At a Glance -->
+                                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                                    <h3 class="text-xl font-semibold text-white mb-4">At a Glance</h3>
+                                    <div class="space-y-4">
+                                        <div id="overview-finance-summary"></div>
+                                        <div><h4 class="text-sm font-semibold text-gray-400 mb-2">Key Info</h4><div class="bg-gray-700/50 p-3 rounded-md space-y-2"><div id="overview-evidence-count"></div><div id="overview-witness-count"></div></div></div>
+                                        <div><h4 class="text-sm font-semibold text-gray-400 mb-2">Recent Activity (Last 5)</h4><div id="overview-log-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="evidence" class="case-tab-content hidden"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-white">Evidence Locker</h3><button id="add-evidence-btn" class="bg-blue-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-blue-400">Log New Evidence</button></div><div id="evidence-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
+                        <div id="witnesses" class="case-tab-content hidden"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-white">Witness List</h3><button id="add-witness-btn" class="bg-blue-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-blue-400">Add Witness</button></div><div id="witness-list" class="space-y-3"></div></div>
+                        <div id="log" class="case-tab-content hidden"><h3 class="text-xl font-semibold text-white mb-4">Case Activity Log</h3><form id="add-log-form" class="flex space-x-2 mb-4"><input type="text" id="log-entry-input" placeholder="Log a new activity..." class="flex-grow bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5" required><button type="submit" class="bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg">Add Log</button></form><div id="log-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2"></div></div>
+                        <div id="finances" class="case-tab-content hidden"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-white">Case Financial Ledger</h3><button id="add-charge-btn" class="bg-red-500 text-white font-bold text-sm py-1 px-3 rounded-lg hover:bg-red-400">Add Charge</button></div><div id="case-finance-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div><div id="case-finance-list" class="space-y-3"></div></div>
+                    </div>`;
+            caseFileContent.innerHTML = caseFileHTML;
+
+            caseFileBackdrop.classList.remove('hidden');
+            setTimeout(() => { caseFileBackdrop.style.opacity = '1'; caseFileContent.style.transform = 'translateX(0)'; caseFileContent.style.opacity = '1'; }, 10);
+
+            setupCaseFileListeners(caseId, caseData);
+
+            if (['Managing Partner', 'Senior Partner'].includes(currentUserRole)) {
+                document.getElementById('admin-actions-container').classList.remove('hidden');
+            }
+        };
+
+        const closeCaseFile = () => {
+            caseFileBackdrop.style.opacity = '0';
+            caseFileContent.style.transform = 'translateX(100%)';
+            caseFileContent.style.opacity = '0';
+            setTimeout(() => {
+                caseFileBackdrop.classList.add('hidden');
+                caseFileContent.innerHTML = '';
+                currentCaseId = null;
+                // Unsubscribe from sub-collection listeners
+                if (evidenceUnsubscribe) evidenceUnsubscribe();
+                if (witnessesUnsubscribe) witnessesUnsubscribe();
+                if (logUnsubscribe) logUnsubscribe();
+                if (caseFinanceUnsubscribe) caseFinanceUnsubscribe();
+                if (caseChargesUnsubscribe) caseChargesUnsubscribe();
+            }, 300);
+        };
+
+        const setupCaseFileListeners = (caseId, originalCaseData) => {
+            document.getElementById('close-case-file-btn').addEventListener('click', closeCaseFile);
+
+            // Tab switching logic
+            const tabs = document.querySelectorAll('.case-tab');
+            const tabContents = document.querySelectorAll('.case-tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', e => {
+                    e.preventDefault();
+                    tabs.forEach(t => { t.classList.remove('border-yellow-400', 'text-yellow-400', 'font-semibold'); t.classList.add('border-transparent', 'text-gray-400'); });
+                    tab.classList.add('border-yellow-400', 'text-yellow-400', 'font-semibold');
+                    tab.classList.remove('border-transparent', 'text-gray-400');
+                    const targetId = tab.getAttribute('href').substring(1);
+                    tabContents.forEach(content => content.classList.add('hidden'));
+                    document.getElementById(targetId).classList.remove('hidden');
+                });
+            });
+
+            // Update Case Details Listener
+            document.getElementById('update-case-btn').addEventListener('click', async () => {
+                const caseRef = doc(db, "cases", caseId);
+                const updatedData = {
+                    clientName: document.getElementById('case-file-client-name').value,
+                    assignedTo: document.getElementById('case-file-assigned-attorney').value,
+                    summary: document.getElementById('case-file-summary').value,
+                    status: document.getElementById('case-status-select').value,
+                };
+                try {
+                    await updateDoc(caseRef, updatedData);
+                    if (originalCaseData.status !== updatedData.status) {
+                        const statusUpdateEmbed = { title: `Case Status Update: #${caseId.substring(0, 8)}`, color: 8421504, fields: [{ name: "Client", value: updatedData.clientName, inline: true }, { name: "Previous Status", value: originalCaseData.status, inline: false }, { name: "New Status", value: updatedData.status, inline: false }], timestamp: new Date().toISOString() };
+                        sendToDiscord(webhookURLs.cases, statusUpdateEmbed);
+                    }
+                    const saveBtn = document.getElementById('update-case-btn');
+                    saveBtn.textContent = 'Saved!';
+                    saveBtn.classList.add('bg-green-500');
+                    setTimeout(() => { saveBtn.textContent = 'Save Changes'; saveBtn.classList.remove('bg-green-500'); }, 2000);
+                } catch (error) { console.error("Error updating case:", error); alert("Failed to update case details."); }
+            });
+
+            // --- Admin Actions ---
+            const archiveBtn = document.getElementById('archive-case-btn');
+            if (archiveBtn) {
+                archiveBtn.addEventListener('click', async () => {
+                    const confirmed = await showConfirmation('Archive Case?', 'Are you sure you want to archive this case? It can be recovered later by changing its status.');
+                    if (confirmed) {
+                        await updateDoc(doc(db, "cases", currentCaseId), { status: 'Archived' });
+                        closeCaseFile();
+                    }
+                });
+            }
+            const deleteBtn = document.getElementById('delete-case-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const confirmed = await showConfirmation('Delete Case Permanently?', 'This will permanently delete the case and all associated evidence, witnesses, and logs. This action cannot be undone.');
+                    if (confirmed) {
+                        await deleteCaseAndSubcollections(currentCaseId);
+                        closeCaseFile();
+                    }
+                });
+            }
+
+            // --- Evidence, Witness, and Log Listeners & Handlers ---
+            const loggedInUser = auth.currentUser ? auth.currentUser.email : 'Unknown';
+            const overviewLogList = document.getElementById('overview-log-list');
+            const overviewEvidenceCount = document.getElementById('overview-evidence-count');
+            const overviewWitnessCount = document.getElementById('overview-witness-count');
+
+            // Icon helper
+            const getIconForType = (type) => {
+                const icons = { 'Document': '📄', 'Photograph': '🖼️', 'Video': '🎬', 'Audio Recording': '🎤', 'Physical Object': '📦', 'External Link': '🔗' };
+                return icons[type] || '📎';
+            };
+
+
+            // Evidence
+            document.getElementById('add-evidence-btn').addEventListener('click', openEvidenceModal);
+            document.getElementById('evidence-file').addEventListener('change', (e) => {
+                const fileNameDisplay = document.getElementById('evidence-file-name');
+                fileNameDisplay.textContent = e.target.files.length > 0 ? `Selected: ${e.target.files[0].name}` : '';
+            });
+
+            document.getElementById('add-evidence-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Uploading...';
+
+                const title = document.getElementById('evidence-title').value;
+                const type = document.getElementById('evidence-type').value;
+                const description = document.getElementById('evidence-description').value;
+                const fileInput = document.getElementById('evidence-file');
+                const file = fileInput.files[0];
+                let fileURL = null;
+                let fileName = null;
+
+                try {
+                    if (file) {
+                        fileName = file.name;
+                        const storageRef = ref(storage, `case_files/${caseId}/${Date.now()}_${file.name}`);
+                        const snapshot = await uploadBytes(storageRef, file);
+                        fileURL = await getDownloadURL(snapshot.ref);
+                    }
+                    await addDoc(collection(db, 'cases', caseId, 'evidence'), { title, type, description, fileURL, fileName, addedBy: loggedInUser, createdAt: new Date().toISOString() });
+                    closeEvidenceModal();
+                } catch (error) {
+                    console.error("Failed to upload evidence:", error);
+                    alert("Error uploading evidence. Please try again.");
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Add Evidence';
+                }
+            });
+            const evidenceList = document.getElementById('evidence-list');
+            evidenceUnsubscribe = onSnapshot(query(collection(db, 'cases', caseId, 'evidence')), snapshot => {
+                evidenceList.innerHTML = '';
+                const placeholder = `<p class="text-gray-500 col-span-full text-center text-sm">No evidence logged.</p>`;
+                if (snapshot.empty) { evidenceList.innerHTML = placeholder; overviewEvidenceCount.innerHTML = `<p class="text-sm text-gray-300">Evidence Logged: <span class="font-bold text-white">0</span></p>`; return; }
+
+                overviewEvidenceCount.innerHTML = `<p class="text-sm text-gray-300">Evidence Logged: <span class="font-bold text-white">${snapshot.size}</span></p>`;
+
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const icon = getIconForType(item.type);
+                    evidenceList.innerHTML += `
+                            <div class="bg-gray-700/50 p-4 rounded-lg border border-gray-600">
+                                <h4 class="font-semibold text-white text-lg flex items-center">${icon} <span class="ml-2">${item.title}</span></h4>
+                                <span class="text-xs font-semibold px-2 py-1 bg-blue-600 text-blue-100 rounded-full my-2 inline-block">${item.type}</span>
+                                <p class="text-sm text-gray-300 whitespace-pre-wrap">${item.description}</p>
+                                ${item.fileURL ? `<a href="${item.fileURL}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-block text-yellow-400 hover:text-yellow-300 text-sm font-semibold">View File: ${item.fileName || 'Download'} &rarr;</a>` : ''}
+                                <p class="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-600">Added by ${item.addedBy} on ${new Date(item.createdAt).toLocaleDateString()}</p>
+                            </div>`;
+                });
+            });
+
+            // Witnesses
+            document.getElementById('add-witness-btn').addEventListener('click', openWitnessModal);
+            document.getElementById('add-witness-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
+                await addDoc(collection(db, 'cases', caseId, 'witnesses'), { name: document.getElementById('witness-name').value, statement: document.getElementById('witness-statement').value, addedBy: loggedInUser, createdAt: new Date().toISOString() });
+                closeWitnessModal();
+            });
+            const witnessList = document.getElementById('witness-list');
+            witnessesUnsubscribe = onSnapshot(query(collection(db, 'cases', caseId, 'witnesses')), snapshot => {
+                witnessList.innerHTML = '';
+                const placeholder = `<p class="text-gray-500 text-center text-sm">No witnesses logged.</p>`;
+                if (snapshot.empty) { witnessList.innerHTML = placeholder; overviewWitnessCount.innerHTML = `<p class="text-sm text-gray-300">Witnesses: <span class="font-bold text-white">0</span></p>`; return; }
+
+                overviewWitnessCount.innerHTML = `<p class="text-sm text-gray-300">Witnesses: <span class="font-bold text-white">${snapshot.size}</span></p>`;
+
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    witnessList.innerHTML += `<div class="bg-gray-700 p-3 rounded-lg"><h4 class="font-semibold text-white">${item.name}</h4><p class="text-sm text-gray-300 whitespace-pre-wrap">${item.statement}</p><p class="text-xs text-gray-500 mt-1">Added by ${item.addedBy} on ${new Date(item.createdAt).toLocaleDateString()}</p></div>`;
+                });
+            });
+
+            // Case Log
+            document.getElementById('add-log-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
+                const input = document.getElementById('log-entry-input');
+                await addDoc(collection(db, 'cases', caseId, 'log'), { entry: input.value, loggedBy: loggedInUser, createdAt: new Date().toISOString() });
+                input.value = '';
+            });
+            const logList = document.getElementById('log-list');
+            logUnsubscribe = onSnapshot(query(collection(db, 'cases', caseId, 'log')), snapshot => {
+                logList.innerHTML = '';
+                overviewLogList.innerHTML = '';
+                const placeholder = `<p class="text-gray-500 text-center text-sm">No log entries.</p>`;
+                if (snapshot.empty) { logList.innerHTML = placeholder; overviewLogList.innerHTML = placeholder; return; }
+                let logs = [];
+                snapshot.forEach(doc => logs.push(doc.data()));
+                logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                logs.forEach(item => {
+                    logList.innerHTML += `<div class="bg-gray-700/50 p-3 rounded-lg"><p class="text-sm text-gray-300">${item.entry}</p><p class="text-xs text-gray-500 mt-1">Logged by ${item.loggedBy} on ${new Date(item.createdAt).toLocaleString()}</p></div>`;
+                });
+                logs.slice(0, 5).forEach(item => {
+                    overviewLogList.innerHTML += `<div class="bg-gray-700/50 p-2 rounded-md"><p class="text-sm truncate">${item.entry}</p><p class="text-xs text-gray-500 text-right">${new Date(item.createdAt).toLocaleDateString()}</p></div>`;
+                });
+            });
+
+            // --- Case Finances Listener ---
+            document.getElementById('add-charge-btn').addEventListener('click', openChargeModal);
+            document.getElementById('add-charge-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!currentCaseId || !auth.currentUser) { console.error("Error: No active case selected or user is not authenticated."); return; }
+                await addDoc(collection(db, 'cases', caseId, 'charges'), { description: document.getElementById('charge-description').value, amount: parseFloat(document.getElementById('charge-amount').value), addedBy: loggedInUser, createdAt: new Date().toISOString() });
+                closeChargeModal();
+            });
+
+            let casePayments = [];
+            let caseCharges = [];
+            const caseFinanceList = document.getElementById('case-finance-list');
+            const caseFinanceSummary = document.getElementById('case-finance-summary');
+            const overviewFinanceSummary = document.getElementById('overview-finance-summary');
+
+            const renderFinances = () => {
+                const basePrice = originalCaseData.basePrice || 0;
+                let totalPaid = casePayments.reduce((sum, p) => sum + p.amount, 0);
+                let totalCharges = caseCharges.reduce((sum, c) => sum + c.amount, 0);
+                let totalCost = basePrice + totalCharges;
+                let balance = totalCost - totalPaid;
+
+                const summaryHTML = `
+                            <div class="bg-gray-700/50 p-4 rounded-lg text-center"><h4 class="text-sm font-semibold text-gray-400">Base Price</h4><p class="text-xl font-bold text-white">$${basePrice.toFixed(2)}</p></div>
+                            <div class="bg-gray-700/50 p-4 rounded-lg text-center"><h4 class="text-sm font-semibold text-gray-400">Added Charges</h4><p class="text-xl font-bold text-red-400">$${totalCharges.toFixed(2)}</p></div>
+                            <div class="bg-gray-700/50 p-4 rounded-lg text-center"><h4 class="text-sm font-semibold text-gray-400">Total Paid</h4><p class="text-xl font-bold text-green-400">$${totalPaid.toFixed(2)}</p></div>
+                            <div class="bg-gray-700/50 p-4 rounded-lg text-center"><h4 class="text-sm font-semibold text-gray-400">Balance Due</h4><p class="text-xl font-bold ${balance > 0 ? 'text-red-400' : 'text-gray-300'}">$${balance.toFixed(2)}</p></div>
+                        `;
+                caseFinanceSummary.innerHTML = summaryHTML;
+
+                overviewFinanceSummary.innerHTML = `
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-400 mb-2">Financials</h4>
+                            <div class="bg-gray-700/50 p-3 rounded-md">
+                                 <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-300">Balance Due:</span>
+                                    <span class="font-bold ${balance > 0 ? 'text-red-400' : 'text-white'}">$${balance.toFixed(2)}</span>
+                                 </div>
+                            </div>
+                        </div>
+                    `;
+
+                const combined = [
+                    ...casePayments.map(p => ({ ...p, isCharge: false })),
+                    ...caseCharges.map(c => ({ ...c, isCharge: true }))
+                ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                caseFinanceList.innerHTML = '';
+                if (combined.length === 0) {
+                    caseFinanceList.innerHTML = `<p class="text-gray-500 text-center">No financial activity for this case.</p>`;
+                    return;
+                }
+
+                combined.forEach(item => {
+                    const color = item.isCharge ? 'text-red-400' : 'text-green-400';
+                    const sign = item.isCharge ? '+' : '+';
+                    const title = item.isCharge ? item.description : item.type;
+                    caseFinanceList.innerHTML += `<div class="bg-gray-700 p-3 rounded-lg flex justify-between items-center"><p>${title} <span class="text-xs text-gray-400">(${new Date(item.createdAt).toLocaleDateString()})</span></p><span class="${color} font-mono">${sign}$${item.amount.toFixed(2)}</span></div>`;
+                });
+            };
+
+            const chargesQuery = query(collection(db, 'cases', caseId, 'charges'));
+            caseChargesUnsubscribe = onSnapshot(chargesQuery, snapshot => { caseCharges = []; snapshot.forEach(doc => caseCharges.push(doc.data())); renderFinances(); });
+            caseFinanceUnsubscribe = onSnapshot(query(collection(db, "transactions"), where("client", "==", `${caseId.substring(0, 8)}... - ${originalCaseData.clientName}`)), s => { casePayments = []; s.forEach(d => { if (['Retainer', 'Payment'].includes(d.data().type)) casePayments.push(d.data()); }); renderFinances(); });
+        };
+
+        async function deleteCaseAndSubcollections(caseId) {
+            const caseRef = doc(db, 'cases', caseId);
+            const subcollections = ['evidence', 'witnesses', 'log', 'charges'];
+            for (const sub of subcollections) {
+                const subcollectionRef = collection(caseRef, sub);
+                const snapshot = await getDocs(subcollectionRef);
+                const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
+                await Promise.all(deletePromises);
+            }
+            // Also delete associated files from storage
+            // Note: This is a basic implementation. For production, you'd want a more robust solution, possibly a cloud function, to list and delete all files in the case directory.
+            const fileListRef = ref(storage, `case_files/${caseId}`);
+            // In a real app, you would listAll(fileListRef) and then delete each item.
+            // For this portal, we are simplifying and not deleting from storage to avoid complexity.
+
+            await deleteDoc(caseRef);
+        }
+
+        casesGrid.addEventListener('click', (e) => {
+            const card = e.target.closest('.case-card');
+            if (card && card.dataset.caseId) {
+                openCaseFile(card.dataset.caseId);
+            }
+        });
+
+        caseFileBackdrop.addEventListener('click', e => {
+            if (e.target === caseFileBackdrop) closeCaseFile();
+        });
+
+        // --- SPA Navigation ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const pageContents = document.querySelectorAll('.page-content');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+
+                pageContents.forEach(content => content.classList.add('hidden'));
+                document.getElementById(targetId).classList.remove('hidden');
+
+                navLinks.forEach(nav => {
+                    nav.classList.remove('bg-gray-700', 'text-white');
+                    nav.classList.add('text-gray-400');
+                });
+                link.classList.add('bg-gray-700', 'text-white');
+                link.classList.remove('text-gray-400');
+            });
+        });
+
+    </script>
+</body>
+</html>
+
